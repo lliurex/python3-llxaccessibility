@@ -22,7 +22,7 @@ class client():
 
 	def _connectBus(self):
 		try:
-			self.bus=dbus.Bus()
+			self.bus=dbus.SessionBus()
 		except Exception as e:
 			print("Could not get session bus: %s\nAborting"%e)
 			sys.exit(1)
@@ -85,6 +85,7 @@ class client():
 	def getKWinEffects(self):
 		paths=["/usr/share/kwin/builtin-effects","/usr/share/kwin/effects",os.path.join(os.getenv("HOME"),".local","share","kwin","effects")]
 		effects={}
+		added=[]
 		for i in paths:
 			if os.path.exists(i):
 				for effect in os.scandir(i):
@@ -93,8 +94,52 @@ class client():
 						if "KPackageStructure" not in data:
 							data["KPackageStructure"]="KWin/Effect"
 						effects.update({effect.name:data})
+						if "KPlugin" in data:
+							kid=data["KPlugin"]["Id"]
+							added.append(kid)
+							if kid.startswith("kwin4_effect_")==False:
+								added.append("kwin4_effect_{}".format(kid))
+		for keffect in self._getDbusKWinEffects():
+			if str(keffect) not in added:
+				name=keffect.replace("kwin4_effect_","").capitalize()
+				data={}
+				data["KPackageStructure"]="KWin/Effect"
+				data['KPlugin']={'Category':'Appearance', 'Description':name,'Id':keffect,'License': 'GPL', 'Name':name}
+				data['path']=''
+				effects.update({name:data})
+				added.append(keffect)
 		return(effects)
 	#def getKWinEffects
+
+	def _getDbusKWinEffects(self):
+		if self.bus==None:
+			self._connectBus()
+		dKwin=self.bus.get_object("org.kde.KWin","/Effects")
+		effects=dKwin.Get("org.kde.kwin.Effects","listOfEffects",dbus_interface="org.freedesktop.DBus.Properties")
+		return(effects)
+	#def _getDbusEffectsForKWin
+
+	def _getDbusInterfaceForPlugin(self,plugin):
+		plugtype=plugin.get("KPackageStructure","")
+		dwin=None
+		dinterface=None
+		if len(plugtype)>0:
+			plugid=plugin.get("KPlugin",{}).get("Id","")
+			if self.bus==None:
+				self._connectBus()
+			if "Script" in plugtype:
+				dobject="/Scripting"
+				dinterface="org.kde.kwin.Scripting"
+			else:
+				dobject="/Effects"
+				dinterface="org.kde.kwin.Effects"
+			try:
+				dwin=self.bus.get_object("org.kde.KWin",dobject)
+			except Exception as e:
+				print("Could not connect to bus: %s\nAborting"%e)
+				sys.exit(1)
+		return(dwin,dinterface)
+	#def _getDbusInterfaceForPlugin
 
 	def getKWinScripts(self):
 		paths=["/usr/share/kwin/scripts",os.path.join(os.getenv("HOME"),".local","share","kwin","scripts")]
@@ -125,27 +170,6 @@ class client():
 		return(plugins)
 	#def getKWinPlugins
 
-	def _getDbusInterfaceForPlugin(self,plugin):
-		plugtype=plugin.get("KPackageStructure","")
-		dwin=None
-		dinterface=None
-		if len(plugtype)>0:
-			plugid=plugin.get("KPlugin",{}).get("Id","")
-			if self.bus==None:
-				self._connectBus()
-			if "Script" in plugtype:
-				dobject="/Scripting"
-				dinterface="org.kde.kwin.Scripting"
-			else:
-				dobject="/Effects"
-				dinterface="org.kde.kwin.Effects"
-			try:
-				dwin=self.bus.get_object("org.kde.KWin",dobject)
-			except Exception as e:
-				print("Could not connect to bus: %s\nAborting"%e)
-				sys.exit(1)
-		return(dwin,dinterface)
-	#def _getDbusInterfaceForPlugin
 
 	def getPluginEnabled(self,plugin):
 		enabled=False
@@ -197,7 +221,6 @@ class client():
 		if self.bus==None:
 			self._connectBus()
 		dobject="/KWin"
-		dInt="org.kde.kwin.reconfigure"
 		dKwin=self.bus.get_object("org.kde.KWin",dobject)
 		self._debug("Reloading kwin")
 		dKwin.reconfigure()
