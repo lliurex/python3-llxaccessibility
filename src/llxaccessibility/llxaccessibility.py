@@ -2,7 +2,6 @@
 import subprocess,os,sys
 import multiprocessing
 import dbus,dbus.exceptions
-#from PySide2.QtGui import QColor
 import json
 from . import profileManager
 from . import ttsManager
@@ -27,6 +26,61 @@ class client():
 			print("Could not get session bus: %s\nAborting"%e)
 			sys.exit(1)
 	#def _connectBus
+	
+	def getDockEnabled(self):
+		status=False
+		dskName="net.lliurex.accessibledock.desktop"
+		if os.path.exists(os.path.join(os.environ.get("HOME"),".config","autostart",dskName)):
+			status=True
+		return status
+	#def getDockEnabled
+
+	def setDockEnabled(self,state):
+		dskName="net.lliurex.accessibledock.desktop"
+		dskPath=os.path.join(os.environ.get("HOME"),".config","autostart",dskName)
+		if self.getDockEnabled()!=state:
+			if state==False:
+				self._debug("Disable autostart")
+				os.unlink(dskPath)
+			elif os.path.exists(srcPath):
+				srcPath=os.path.join("/usr","share","applications",dskName)
+				if os.path.exists(os.path.dirname(dskPath))==False:
+					os.makedirs(os.path.dirname(dskPath))
+				self._debug("Enable autostart")
+				shutil.copy(srcPath,dskPath)
+	#def toggleDockEnabled(self):
+	
+	def getGrubBeep(self):
+		state=False
+		fpath="/etc/default/grub"
+		if os.path.exists(fpath):
+			with open(fpath,"r") as f:
+				for l in f.readlines():
+					if l.replace(" ","").startswith("GRUB_INIT_TUNE"):
+						state=True
+						break
+		return(state)
+	#def getGrubBeep
+
+	def readKFile(self,kfile,group,key):
+		cmd=["kreadconfig5","--file",kfile,"--group",group,"--key",key]
+		out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8").strip()
+		return(out)
+	#def readKFile
+
+	def writeKFile(self,kfile,group,key,data):
+		if isinstance(data,str)==False:
+			M
+			data=str(data).lower()
+		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
+		out=subprocess.check_output(cmd)
+		self._debug(out)
+		return(out)
+	#def writeKFile
+
+	def _writeKwinrc(self,group,key,data):
+		return(self._writeKFile("kwinrc",group,key,data))
+	#def _writeKwinrc
 
 	def _readMetadataDesktop(self,path):
 		data={}
@@ -81,6 +135,20 @@ class client():
 		data.update({"path":metapath})
 		return(data)
 	#def _readMetadata
+
+	def getSDDMSound(self):
+		state=False
+		if len(self.readKFile("plasma_workspace.notifyrc","Event/startkde","Action"))>0:
+			state=True
+		return(state)
+	#def setSDDMSound
+
+	def setSDDMSound(self,state=True):
+		action=""
+		if state==True:
+			action="Sound"
+		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
+	#def setSDDMSound
 
 	def getKWinEffects(self):
 		paths=["/usr/share/kwin/builtin-effects","/usr/share/kwin/effects",os.path.join(os.getenv("HOME"),".local","share","kwin","effects")]
@@ -170,7 +238,6 @@ class client():
 		return(plugins)
 	#def getKWinPlugins
 
-
 	def getPluginEnabled(self,plugin):
 		enabled=False
 		(dKwin,dInt)=self._getDbusInterfaceForPlugin(plugin)
@@ -185,17 +252,6 @@ class client():
 				enabled=True
 		return(enabled)
 	#def getPluginEnabled
-
-	def writeKFile(self,kfile,group,key,data):
-		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
-		out=subprocess.check_output(cmd)
-		self._debug(out)
-		return(out)
-	#def _writeKFile
-
-	def _writeKwinrc(self,group,key,data):
-		return(self._writeKFile("kwinrc",group,key,data))
-	#def _writeKwinrc
 
 	def togglePlugin(self,plugin):
 		enabled=False
@@ -262,13 +318,6 @@ class client():
 		return(self.profile.getProfilesDir())
 	#def getProfilesDir
 
-	def setSDDMSound(self,state=True):
-		action=""
-		if state==True:
-			action="Sound"
-		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
-	#def setSDDMSound
-
 	def getTtsFiles(self):
 		return(self.tts.getTtsFiles())
 	#def getTtsFiles
@@ -299,4 +348,3 @@ if __name__=="__main__":
 				if i.path.endswith(".tar"):
 					print(i.name)
 			break
-
