@@ -349,12 +349,19 @@ class client():
 			out="disabled"
 	#def setSDDMSound
 
-	def getOrcaSDDM(self,state):
-		if state==True:
-			os.copy(:161
-
+	def getOrcaSDDM(self):
+		sw=os.path.exists("/usr/share/accesswizard/tools/timeout")
+		return sw
 	#def getOrcaSDDM
-	def setOrcaSDDM(self,
+
+	def setOrcaSDDM(self,timeout=0):
+		if timeout>0:
+			with open("/usr/share/accesswizard/tools/timeout","w") as f:
+				f.write("CONT={}".format(timeout))
+		else:
+			if self.getOrcaSDDM():
+				os.unlink("/usr/share/accesswizard/tools/timeout")
+	#def setOrcaSDDM
 
 #class client
 
