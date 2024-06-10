@@ -70,7 +70,6 @@ class client():
 
 	def writeKFile(self,kfile,group,key,data):
 		if isinstance(data,str)==False:
-			M
 			data=str(data).lower()
 		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
 		out=subprocess.check_output(cmd)
@@ -135,20 +134,6 @@ class client():
 		data.update({"path":metapath})
 		return(data)
 	#def _readMetadata
-
-	def getSDDMSound(self):
-		state=False
-		if len(self.readKFile("plasma_workspace.notifyrc","Event/startkde","Action"))>0:
-			state=True
-		return(state)
-	#def setSDDMSound
-
-	def setSDDMSound(self,state=True):
-		action=""
-		if state==True:
-			action="Sound"
-		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
-	#def setSDDMSound
 
 	def getKWinEffects(self):
 		paths=["/usr/share/kwin/builtin-effects","/usr/share/kwin/effects",os.path.join(os.getenv("HOME"),".local","share","kwin","effects")]
@@ -325,6 +310,51 @@ class client():
 	def getFestivalVoices(self):
 		return(self.tts.getFestivalVoices())
 	#def getFestivalVoices
+
+	def getSessionSound(self):
+		state=False
+		if len(self.readKFile("plasma_workspace.notifyrc","Event/startkde","Action"))>0:
+			state=True
+		return(state)
+	#def setSessionSound
+
+	def setSessionSound(self,state=True):
+		action=""
+		if state==True:
+			action="Sound"
+		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
+	#def setSessionSound
+
+	def getSDDMSound(self):
+		state=False
+		cmd=["/usr/bin/systemctl","is-enabled","pulse-sddm"]
+		try:
+			out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8")
+		except Exception as e:
+			out="disabled"
+		print(out)
+		if out.strip()=="enabled":
+			state=True
+		return(state)
+	#def setSDDMSound
+
+	def setSDDMSound(self,state=True):
+		action="disable"
+		if state==True:
+			action="enable"
+		cmd=["/usr/bin/systemctl",action,"pulse-sddm"]
+		try:
+			out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8")
+		except Exception as e:
+			out="disabled"
+	#def setSDDMSound
+
+	def getOrcaSDDM(self,state):
+		if state==True:
+			os.copy(:161
+
+	#def getOrcaSDDM
+	def setOrcaSDDM(self,
 
 #class client
 
