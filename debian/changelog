@@ -1,3 +1,9 @@
+python3-llxaccessibility (0.2) jammy-testing; urgency=medium
+
+  * Add support for system sound
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 10 Jun 2024 16:56:44 +0200
+
 python3-llxaccessibility (0.1) jammy-testing; urgency=medium
 
   * Python module for centralize accessibiliy across all system apps
