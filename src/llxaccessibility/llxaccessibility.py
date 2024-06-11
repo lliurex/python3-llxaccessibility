@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import subprocess,os,sys
+import subprocess,os,sys,shutil
 import multiprocessing
 import dbus,dbus.exceptions
 import json
@@ -38,12 +38,13 @@ class client():
 	def setDockEnabled(self,state):
 		dskName="net.lliurex.accessibledock.desktop"
 		dskPath=os.path.join(os.environ.get("HOME"),".config","autostart",dskName)
+		srcPath=os.path.join("/usr","share","applications",dskName)
+		self._debug("autostart path: {0} {1}".format(srcPath,state))
 		if self.getDockEnabled()!=state:
 			if state==False:
 				self._debug("Disable autostart")
 				os.unlink(dskPath)
 			elif os.path.exists(srcPath):
-				srcPath=os.path.join("/usr","share","applications",dskName)
 				if os.path.exists(os.path.dirname(dskPath))==False:
 					os.makedirs(os.path.dirname(dskPath))
 				self._debug("Enable autostart")
@@ -316,7 +317,7 @@ class client():
 		if len(self.readKFile("plasma_workspace.notifyrc","Event/startkde","Action"))>0:
 			state=True
 		return(state)
-	#def setSessionSound
+	#def getSessionSound
 
 	def setSessionSound(self,state=True):
 		action=""
@@ -332,7 +333,6 @@ class client():
 			out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8")
 		except Exception as e:
 			out="disabled"
-		print(out)
 		if out.strip()=="enabled":
 			state=True
 		return(state)
