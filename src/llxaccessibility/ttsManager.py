@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import tesserocr
 from PIL import Image
+#import orca
 import subprocess
 from datetime import datetime
 import string
@@ -16,6 +17,7 @@ class manager():
 	def __init__(self):
 		self.dbg=True
 		self.libfestival="/usr/share/accesshelper/stacks/libfestival.py"
+		#self.tts=orca.orca()
 		self.confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard")
 		self.txtDir=os.path.join(self.confDir,"records/txt")
 		self.mp3Dir=os.path.join(self.confDir,"records/mp3")

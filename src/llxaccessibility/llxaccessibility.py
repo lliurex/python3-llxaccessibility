@@ -1,8 +1,7 @@
 #!/usr/bin/python3
-import subprocess,os,sys
+import subprocess,os,sys,shutil
 import multiprocessing
 import dbus,dbus.exceptions
-#from PySide2.QtGui import QColor
 import json
 from . import profileManager
 from . import ttsManager
@@ -22,11 +21,66 @@ class client():
 
 	def _connectBus(self):
 		try:
-			self.bus=dbus.Bus()
+			self.bus=dbus.SessionBus()
 		except Exception as e:
 			print("Could not get session bus: %s\nAborting"%e)
 			sys.exit(1)
 	#def _connectBus
+	
+	def getDockEnabled(self):
+		status=False
+		dskName="net.lliurex.accessibledock.desktop"
+		if os.path.exists(os.path.join(os.environ.get("HOME"),".config","autostart",dskName)):
+			status=True
+		return status
+	#def getDockEnabled
+
+	def setDockEnabled(self,state):
+		dskName="net.lliurex.accessibledock.desktop"
+		dskPath=os.path.join(os.environ.get("HOME"),".config","autostart",dskName)
+		srcPath=os.path.join("/usr","share","applications",dskName)
+		self._debug("autostart path: {0} {1}".format(srcPath,state))
+		if self.getDockEnabled()!=state:
+			if state==False:
+				self._debug("Disable autostart")
+				os.unlink(dskPath)
+			elif os.path.exists(srcPath):
+				if os.path.exists(os.path.dirname(dskPath))==False:
+					os.makedirs(os.path.dirname(dskPath))
+				self._debug("Enable autostart")
+				shutil.copy(srcPath,dskPath)
+	#def toggleDockEnabled(self):
+	
+	def getGrubBeep(self):
+		state=False
+		fpath="/etc/default/grub"
+		if os.path.exists(fpath):
+			with open(fpath,"r") as f:
+				for l in f.readlines():
+					if l.replace(" ","").startswith("GRUB_INIT_TUNE"):
+						state=True
+						break
+		return(state)
+	#def getGrubBeep
+
+	def readKFile(self,kfile,group,key):
+		cmd=["kreadconfig5","--file",kfile,"--group",group,"--key",key]
+		out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8").strip()
+		return(out)
+	#def readKFile
+
+	def writeKFile(self,kfile,group,key,data):
+		if isinstance(data,str)==False:
+			data=str(data).lower()
+		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
+		out=subprocess.check_output(cmd)
+		self._debug(out)
+		return(out)
+	#def writeKFile
+
+	def _writeKwinrc(self,group,key,data):
+		return(self._writeKFile("kwinrc",group,key,data))
+	#def _writeKwinrc
 
 	def _readMetadataDesktop(self,path):
 		data={}
@@ -85,6 +139,7 @@ class client():
 	def getKWinEffects(self):
 		paths=["/usr/share/kwin/builtin-effects","/usr/share/kwin/effects",os.path.join(os.getenv("HOME"),".local","share","kwin","effects")]
 		effects={}
+		added=[]
 		for i in paths:
 			if os.path.exists(i):
 				for effect in os.scandir(i):
@@ -93,8 +148,52 @@ class client():
 						if "KPackageStructure" not in data:
 							data["KPackageStructure"]="KWin/Effect"
 						effects.update({effect.name:data})
+						if "KPlugin" in data:
+							kid=data["KPlugin"]["Id"]
+							added.append(kid)
+							if kid.startswith("kwin4_effect_")==False:
+								added.append("kwin4_effect_{}".format(kid))
+		for keffect in self._getDbusKWinEffects():
+			if str(keffect) not in added:
+				name=keffect.replace("kwin4_effect_","").capitalize()
+				data={}
+				data["KPackageStructure"]="KWin/Effect"
+				data['KPlugin']={'Category':'Appearance', 'Description':name,'Id':keffect,'License': 'GPL', 'Name':name}
+				data['path']=''
+				effects.update({name:data})
+				added.append(keffect)
 		return(effects)
 	#def getKWinEffects
+
+	def _getDbusKWinEffects(self):
+		if self.bus==None:
+			self._connectBus()
+		dKwin=self.bus.get_object("org.kde.KWin","/Effects")
+		effects=dKwin.Get("org.kde.kwin.Effects","listOfEffects",dbus_interface="org.freedesktop.DBus.Properties")
+		return(effects)
+	#def _getDbusEffectsForKWin
+
+	def _getDbusInterfaceForPlugin(self,plugin):
+		plugtype=plugin.get("KPackageStructure","")
+		dwin=None
+		dinterface=None
+		if len(plugtype)>0:
+			plugid=plugin.get("KPlugin",{}).get("Id","")
+			if self.bus==None:
+				self._connectBus()
+			if "Script" in plugtype:
+				dobject="/Scripting"
+				dinterface="org.kde.kwin.Scripting"
+			else:
+				dobject="/Effects"
+				dinterface="org.kde.kwin.Effects"
+			try:
+				dwin=self.bus.get_object("org.kde.KWin",dobject)
+			except Exception as e:
+				print("Could not connect to bus: %s\nAborting"%e)
+				sys.exit(1)
+		return(dwin,dinterface)
+	#def _getDbusInterfaceForPlugin
 
 	def getKWinScripts(self):
 		paths=["/usr/share/kwin/scripts",os.path.join(os.getenv("HOME"),".local","share","kwin","scripts")]
@@ -125,28 +224,6 @@ class client():
 		return(plugins)
 	#def getKWinPlugins
 
-	def _getDbusInterfaceForPlugin(self,plugin):
-		plugtype=plugin.get("KPackageStructure","")
-		dwin=None
-		dinterface=None
-		if len(plugtype)>0:
-			plugid=plugin.get("KPlugin",{}).get("Id","")
-			if self.bus==None:
-				self._connectBus()
-			if "Script" in plugtype:
-				dobject="/Scripting"
-				dinterface="org.kde.kwin.Scripting"
-			else:
-				dobject="/Effects"
-				dinterface="org.kde.kwin.Effects"
-			try:
-				dwin=self.bus.get_object("org.kde.KWin",dobject)
-			except Exception as e:
-				print("Could not connect to bus: %s\nAborting"%e)
-				sys.exit(1)
-		return(dwin,dinterface)
-	#def _getDbusInterfaceForPlugin
-
 	def getPluginEnabled(self,plugin):
 		enabled=False
 		(dKwin,dInt)=self._getDbusInterfaceForPlugin(plugin)
@@ -161,17 +238,6 @@ class client():
 				enabled=True
 		return(enabled)
 	#def getPluginEnabled
-
-	def writeKFile(self,kfile,group,key,data):
-		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
-		out=subprocess.check_output(cmd)
-		self._debug(out)
-		return(out)
-	#def _writeKFile
-
-	def _writeKwinrc(self,group,key,data):
-		return(self._writeKFile("kwinrc",group,key,data))
-	#def _writeKwinrc
 
 	def togglePlugin(self,plugin):
 		enabled=False
@@ -197,7 +263,6 @@ class client():
 		if self.bus==None:
 			self._connectBus()
 		dobject="/KWin"
-		dInt="org.kde.kwin.reconfigure"
 		dKwin=self.bus.get_object("org.kde.KWin",dobject)
 		self._debug("Reloading kwin")
 		dKwin.reconfigure()
@@ -239,13 +304,6 @@ class client():
 		return(self.profile.getProfilesDir())
 	#def getProfilesDir
 
-	def setSDDMSound(self,state=True):
-		action=""
-		if state==True:
-			action="Sound"
-		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
-	#def setSDDMSound
-
 	def getTtsFiles(self):
 		return(self.tts.getTtsFiles())
 	#def getTtsFiles
@@ -253,6 +311,57 @@ class client():
 	def getFestivalVoices(self):
 		return(self.tts.getFestivalVoices())
 	#def getFestivalVoices
+
+	def getSessionSound(self):
+		state=False
+		if len(self.readKFile("plasma_workspace.notifyrc","Event/startkde","Action"))>0:
+			state=True
+		return(state)
+	#def getSessionSound
+
+	def setSessionSound(self,state=True):
+		action=""
+		if state==True:
+			action="Sound"
+		self.writeKFile("plasma_workspace.notifyrc","Event/startkde","Action",action)
+	#def setSessionSound
+
+	def getSDDMSound(self):
+		state=False
+		cmd=["/usr/bin/systemctl","is-enabled","pulse-sddm"]
+		try:
+			out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8")
+		except Exception as e:
+			out="disabled"
+		if out.strip()=="enabled":
+			state=True
+		return(state)
+	#def setSDDMSound
+
+	def setSDDMSound(self,state=True):
+		action="disable"
+		if state==True:
+			action="enable"
+		cmd=["/usr/bin/systemctl",action,"pulse-sddm"]
+		try:
+			out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8")
+		except Exception as e:
+			out="disabled"
+	#def setSDDMSound
+
+	def getOrcaSDDM(self):
+		sw=os.path.exists("/usr/share/accesswizard/tools/timeout")
+		return sw
+	#def getOrcaSDDM
+
+	def setOrcaSDDM(self,timeout=0):
+		if timeout>0:
+			with open("/usr/share/accesswizard/tools/timeout","w") as f:
+				f.write("CONT={}".format(timeout))
+		else:
+			if self.getOrcaSDDM():
+				os.unlink("/usr/share/accesswizard/tools/timeout")
+	#def setOrcaSDDM
 
 #class client
 
@@ -276,4 +385,3 @@ if __name__=="__main__":
 				if i.path.endswith(".tar"):
 					print(i.name)
 			break
-
