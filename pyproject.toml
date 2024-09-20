@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name='llxaccessibillity'
-version="0,3"
+version="0.3"
 description='lliurex accessibility api'
 authors=[
   {name='Lliurex Team'},
