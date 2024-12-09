@@ -24,19 +24,19 @@ from distutils.core import setup
 if __name__ == '__main__':
 
     setup(name='python3-llxaccessibility',
-        version='0.1',
-        description='Lliurex accessibility module',
+        version='0.3',
+        description='Lliurex accessibility module'
         long_description="""""",
         author='Lliurex Team',
         author_email='juanma1980@gmail.com',
         maintainer='Juanma Navarro',
         maintainer_email='juanma1980@gmail.com',
-        keywords=['software','accessibility'],
+        keywords=['software','desktop'],
         url='http://www.lliurex.net',
         license='GPL',
         platforms='UNIX',
 #        scripts = [''],
-        package_dir = {'':'src'},
+        package_dir = {'':''},
         packages = ['llxaccessibility'],
         data_files = [],
         classifiers=[

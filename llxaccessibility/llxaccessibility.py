@@ -276,7 +276,7 @@ class client():
 	#def _mpLaunchKcm
 
 	def launchKcmModule(self,kcmModule,mp=False):
-		cmd=["kcmshell5",kcmModule]
+		cmd=["kcmshell6",kcmModule]
 		self.launchCmd(cmd,mp)
 	#def launchKcmModule
 
