@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     setup(name='python3-llxaccessibility',
         version='0.3',
-        description='Lliurex accessibility module'
+        description='Lliurex accessibility module',
         long_description="""""",
         author='Lliurex Team',
         author_email='juanma1980@gmail.com',
