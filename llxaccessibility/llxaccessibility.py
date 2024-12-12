@@ -269,23 +269,37 @@ class client():
 	#def applyKWinChanges
 
 	def _mpLaunchCmd(self,cmd):
+		proc=None
 		try:
-			subprocess.run(cmd)
+			proc=subprocess.run(cmd)
 		except Exception as e:
 			print (e)
+		return(proc)
 	#def _mpLaunchKcm
 
-	def launchKcmModule(self,kcmModule,mp=False):
-		cmd=["kcmshell6",kcmModule]
-		self.launchCmd(cmd,mp)
+	def launchKcmModule(self,kcmModule):
+		cmd=["kcmshell5",kcmModule]
+		proc=self.launchCmd(cmd)
+		return(proc)
 	#def launchKcmModule
 
-	def launchCmd(self,cmd,mp=False):
-		if mp==True:
-			mp=multiprocessing.Process(target=self._mpLaunchCmd,args=(cmd,))
-			mp.start()
-		else:
-			self._mpLaunchCmd(cmd)
+	def launchKcmModuleAsync(self,kcmModule):
+		cmd=["kcmshell5",kcmModule]
+		proc=self.launchCmdAsync(cmd)
+		return(proc)
+	#def launchKcmModule
+
+
+	def launchCmdAsync(self,cmd):
+		proc=multiprocessing.Process(target=self._mpLaunchCmd,args=(cmd,))
+		proc.daemon=True
+		proc.start()
+		return(proc)
+	#def launchCmdAsync
+
+	def launchCmd(self,cmd):
+		proc=self._mpLaunchCmd(cmd)
+		return(proc)
 	#def launchCmd
 	
 	def saveProfile(self,pname="profile"):
