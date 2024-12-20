@@ -234,4 +234,28 @@ class manager():
 		return(self.prflDir)
 	#def getProfilesDir
 
+	def getDockEnabled(self):
+		status=False
+		dskName="net.lliurex.accessibledock.desktop"
+		if os.path.exists(os.path.join(os.environ.get("HOME"),".config","autostart",dskName)):
+			status=True
+		return status
+	#def getDockEnabled
+
+	def setDockEnabled(self,state):
+		dskName="net.lliurex.accessibledock.desktop"
+		dskPath=os.path.join(os.environ.get("HOME"),".config","autostart",dskName)
+		srcPath=os.path.join("/usr","share","applications",dskName)
+		self._debug("autostart path: {0} {1}".format(srcPath,state))
+		if self.getDockEnabled()!=state:
+			if state==False:
+				self._debug("Disable autostart")
+				os.unlink(dskPath)
+			elif os.path.exists(srcPath):
+				if os.path.exists(os.path.dirname(dskPath))==False:
+					os.makedirs(os.path.dirname(dskPath))
+				self._debug("Enable autostart")
+				shutil.copy(srcPath,dskPath)
+	#def setDockenabled
+
 #class manager
