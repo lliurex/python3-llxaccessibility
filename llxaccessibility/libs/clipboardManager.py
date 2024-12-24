@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from PySide2.QtGui import QClipboard
 
 class clipboardManager():
 	def __init__(self,*args,**kwargs):
