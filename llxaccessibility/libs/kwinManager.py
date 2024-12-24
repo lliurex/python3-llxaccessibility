@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import dbus,dbus.exceptions
+import os
 from PySide2.QtGui import QClipboard
 from . import kconfig
 class manager():

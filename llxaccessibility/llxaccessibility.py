@@ -8,11 +8,13 @@ import llxaccessibility.libs.imageprocessing as imageprocessing
 import llxaccessibility.libs.sddmManager as sddmManager
 import llxaccessibility.libs.kwinManager as kwinManager
 import llxaccessibility.libs.kconfig as kconfig
+from PySide2.QtWidgets import QApplication
 
 class client():
 	def __init__(self):
 		self.dbg=True
 		self.bus=None
+		app=QApplication(["tts"])
 		self.profile=profileManager.manager()
 		self.tts=ttsManager.manager()
 		self.sddm=sddmManager.manager()
@@ -102,7 +104,6 @@ class client():
 		return(proc)
 	#def launchKcmModule
 
-
 	def launchCmdAsync(self,cmd):
 		proc=multiprocessing.Process(target=self._mpLaunchCmd,args=(cmd,))
 		proc.daemon=True
@@ -171,10 +172,17 @@ class client():
 
 	def readScreen(self,*args,onlyClipboard=False,onlyScreen=False):
 		txt=""
+		lang=self.readKFile("kwinrc","Script-ocrwindow","Voice")
+		scripts=self.kwin.getKWinScripts()
+		script=scripts.get("ocrwindow",{})
+		path=os.path.join("{}".format(os.path.dirname(script.get("path",""))),"contents","ui","config.ui")
+		lang=self.kconfig.getTextFromValueKScript(path,"Voice",lang)
+		langdict={"spanish":"es","valencian":"ca"}
+		lang=langdict.get(lang.lower(),"en")
 		if onlyScreen==False:
 			txt=self.getClipboardText()
 		if not txt and onlyClipboard==False:
-			txt=self.getImageOcr()
+			txt=self.getImageOcr(lang=lang)
 		if len(txt)>0:
 			self.tts.invokeReader(txt)
 	#def readScreen

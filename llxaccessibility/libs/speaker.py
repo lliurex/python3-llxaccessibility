@@ -2,16 +2,33 @@
 import os
 from orca import orca
 import subprocess
+from . import kconfig
 
 class speaker():
 	def __init__(self,*args,**kwargs):
+		super().__init__()
+		self.dbg=True
 		self.txtFile=kwargs.get("txtFile")#.encode('iso8859-15',"replace")
 		self.stretch=float(kwargs.get("stretch",1))
 		self.voice=kwargs.get("voice","kal")
 		self.currentDate=kwargs.get("date","240101")
 		self.synth=kwargs.get("synth","")
-		self.orca=orca.speech
+		self.kconfig=kconfig.kconfig()
+		self.orca=None
 	#def __init__
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("speaker: {}".format(msg))
+	#def _debug
+
+	def setParms(self,*args,**kwargs):
+		self.stretch=float(kwargs.get("stretch",1))
+		self.voice=kwargs.get("voice","kal")
+		self.currentDate=kwargs.get("date","240101")
+		self.synth=kwargs.get("synth","")
+		self.txtFile=kwargs.get("txtFile","")
+	#def setParms
 
 	def run(self,txtFile=""):
 		confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
@@ -25,8 +42,14 @@ class speaker():
 	#def run
 
 	def _runFestival(self,txt):
-		self.synth="orca"
-		if self.synth=="orca":
+		cfg=self.kconfig.getTTSConfig()
+		print("******************")
+		print(cfg)
+		if cfg["orca"]==True:
+			if self.orca==None:
+				self.orca=orca.speech
+				self.orca.init()
+			self._debug("ORCA")
 			self.orca.speak(txt)
 		else:
 			confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
@@ -34,8 +57,8 @@ class speaker():
 			if self.voice.startswith("voice_")==False:
 				self.voice="voice_{}".format(self.voice)
 			self.voice="voice_upc_ca_mar_hts"
-			p.stdin.write("({})\n".format(self.voice).encode("utf8"))
-			p.stdin.write("(Parameter.set 'Duration_Stretch {})\n".format(self.stretch).encode("utf8"))
+			p.stdin.write("({})\n".format(cfg["voice"]).encode("utf8"))
+			p.stdin.write("(Parameter.set 'Duration_Stretch {})\n".format(cfg["stretch"]).encode("utf8"))
 			p.stdin.write("(set! utt (Utterance Text {}))\n".format(txt).encode("iso8859-1"))
 			p.stdin.write("(utt.synth utt)\n".encode("utf8"))
 			p.stdin.write("(utt.save.wave utt \"/tmp/.baseUtt.wav\" \'riff)\n".encode("utf8"))
