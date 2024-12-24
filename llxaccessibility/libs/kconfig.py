@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import subprocess
+import json
 import os
 class kconfig():
 	def __init__(self,parent=None):
@@ -19,6 +20,30 @@ class kconfig():
 		self._debug(out)
 		return(out)
 	#def writeKFile
+
+	def getTextFromValueKScript(self,path,group,value):
+		items=[]
+		text=""
+		if group.startswith("kcfg_")==False:
+			group="kcfg_{}".format(group.capitalize())
+		if os.path.exists(path):
+			item=False
+			with open(path,"r") as f:
+				for fline in f.readlines():
+					line=fline.strip()
+					if "ComboBox" in line and group in line:
+						item=True
+						continue
+					if item==True:
+						if "</widget>" in line:
+							item=False	
+							break
+						if "<string>" in line.lower():
+							items.append(line.removeprefix("<string>").removesuffix("</string>"))
+		if len(items)>=int(value):
+			text=items[int(value)]
+		return text
+	#def getXmlTextFromValueScriptXml
 
 	def readMetadata(self,path):
 		metapath=""
@@ -73,3 +98,21 @@ class kconfig():
 		data=json.loads(data)
 		return(data)
 	#def _readMetadataJson
+
+	def getTTSConfig(self):
+		#REM SYNTH IS NOT FALSE, it's one from orca,synth,vlc
+		kconfig={}
+		for key in ["pitch","stretch","voice","rate","orca","vlc","synth"]:
+			cfg=self.readKFile("kwinrc","Script-ocrwindow",key.capitalize())
+			if isinstance(cfg,str):
+				if cfg=="true":
+					cfg=True
+				elif cfg=="false":
+					cfg=False
+				elif cfg.isnumeric()==True:
+					cfg=int(cfg)
+				elif cfg.isalpha()==False: #decimal
+					cfg=float(a)
+			kconfig.update({key:cfg})
+		return(kconfig)
+	#def getTTSConfig
