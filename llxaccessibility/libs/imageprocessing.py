@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 import tesserocr
 from spellchecker import SpellChecker
+import hunspell
+import locale
+import subprocess
 import string
 import os
 import cv2
 import numpy as np
 from PIL import Image
 from PySide2.QtGui import QClipboard
-import subprocess
 
 class filters():
 	def __init__(self,*args,**kwargs):
@@ -103,8 +105,8 @@ class imageprocessing():
 		h, w, c = image.shape
 		#self._debug(f'Image shape: {h}H x {w}W x {c}C')
 
-		image=self.filter.cvGrayscale(image)
 	#	image = image[:, :, 0]
+		image=self.filter.cvGrayscale(image)
 	#	image=self.sobel(image)
 	#	image=self.thresholding(image)
 	#	image=self.cvDeskew(image)
@@ -136,12 +138,20 @@ class imageprocessing():
 		return(outImg)
 	#def _getImgForOCR
 
-	def _readImg(self,imgPIL):
+	def _readImg(self,imgPIL,lang="en"):
 
 		txt=""
+		if lang=="en":
+			tsslang="eng"
+		elif lang=="es":
+			tsslang="spa"
+		elif lang=="ca":
+			tsslang="cat"
+
 		imgPIL=imgPIL.convert('L').resize([5 * _ for _ in imgPIL.size], Image.BICUBIC)
 		imgPIL.save("/tmp/proc.png")
-		with tesserocr.PyTessBaseAPI(lang="spa",psm=11) as api:
+		print("Reading with {}".format(tsslang))
+		with tesserocr.PyTessBaseAPI(lang=tsslang,psm=11) as api:
 			api.ReadConfigFile('digits')
 			# Consider having string with the white list chars in the config_file, for instance: "0123456789"
 			whitelist=string.ascii_letters+string.digits+string.punctuation+string.whitespace
@@ -153,10 +163,11 @@ class imageprocessing():
 			txt=api.GetUTF8Text()
 			self._debug((api.AllWordConfidences()))
 		#txt=tesserocr.image_to_text(imgPIL,lang="spa")
-		txt=self._spellCheck(txt)
+		txt=self._hunspellCheck(txt,lang)
 		return(txt)
+	#def _readImg
 
-	def getImageOCR(self,onlyClipboard=False,onlyScreen=False):
+	def getImageOCR(self,onlyClipboard=False,onlyScreen=False,lang="en"):
 		img=self._getImgForOCR(onlyClipboard,onlyScreen)
 		imgPIL=None
 		if os.path.isfile(img):
@@ -167,11 +178,41 @@ class imageprocessing():
 			except Exception as e:
 				print(e)
 		if imgPIL:
-			txt=self._readImg(imgPIL)
+			txt=self._readImg(imgPIL,lang=lang)
 		return(txt)
+	#def getImageOCR
 
-	def _spellCheck(self,txt):
-		spell=SpellChecker(language='es')
+	def _hunspellCheck(self,txt,lang="en"):
+		dicF="/usr/share/hunspell/{}.dic".format(lang)
+		if os.path.exists(dicF)==False:
+			defaultLocale=locale.getDefaultLocale()
+			dicF="/usr/share/hunspell/{}.dic".format(defaultLocale[0].split("_")[0])
+		spell=hunspell.HunSpell(dicF,dicF.replace(".dic",".aff"))
+		correctedTxt=[]
+		for word in txt.split():
+			word=word.replace("\"","")
+			if word.capitalize().istitle():
+				if spell.spell(word)==False:
+					suggestion=spell.suggest(word)
+					if len(suggestion)>0:
+						word=suggestion[0]
+				correctedTxt.append(word)
+			else:
+				onlytext = ''.join(filter(str.isalnum, word)) 
+				if onlytext.capitalize().istitle():
+					if spell.spell(onlytext)==False:
+						suggestion=spell.suggest(onlytext)
+						if len(suggestion)>0:
+							onlytext=suggestion[0]
+					correctedTxt.append(onlytext)
+				elif self.dbg:
+					self._debug("Exclude: {}".format(word))
+		txt=" ".join(correctedTxt)
+		return(txt)
+	#def _hunspellCheck
+
+	def _spellCheck(self,txt,lang="en"):
+		spell=SpellChecker(language=lang)
 		correctedTxt=[]
 		for word in txt.split():
 			word=word.replace("\"","")
