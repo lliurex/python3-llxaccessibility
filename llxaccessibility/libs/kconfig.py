@@ -4,7 +4,11 @@ import json
 import os
 class kconfig():
 	def __init__(self,parent=None):
-		self.dbg=False
+		self.dbg=True
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("Kconfig: {}".format(msg))
 
 	def readKFile(self,kfile,group,key):
 		cmd=["kreadconfig5","--file",kfile,"--group",group,"--key",key]
@@ -24,9 +28,13 @@ class kconfig():
 	def getTextFromValueKScript(self,path,group,value):
 		items=[]
 		text=""
+		self._debug("Getting value {0}-{1} from {2}".format(group,value,path)) 
 		if group.startswith("kcfg_")==False:
 			group="kcfg_{}".format(group.capitalize())
-		if os.path.exists(path):
+		if os.path.exists(path)==False:
+			path=self._getKScriptPath(path)
+			path=os.path.join(path,"contents","ui","config.ui")
+		if os.path.exists(path)==True:
 			item=False
 			with open(path,"r") as f:
 				for fline in f.readlines():
@@ -116,3 +124,14 @@ class kconfig():
 			kconfig.update({key:cfg})
 		return(kconfig)
 	#def getTTSConfig
+
+	def _getKScriptPath(self,script):
+		scriptPath=script
+		paths=[os.path.join(os.environ["HOME"],".local","share","kwin","scripts"),"/usr/share/kwin/scripts"]
+		for path in paths:
+			if os.path.exists(os.path.join(path,script))==True:
+				scriptPath=os.path.join(path,script)
+				break
+		self._debug("KScript Path: {}".format(scriptPath))
+		return(scriptPath)
+	#def getKScriptPath
