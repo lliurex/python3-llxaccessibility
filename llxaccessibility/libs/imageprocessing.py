@@ -99,24 +99,20 @@ class imageprocessing():
 			print("imageProcessing: {}".format(msg))
 	#def _debug
 	
-	def _processImg(self,img):
-		outImg="{}".format(img)
-		image=cv2.imread(img,flags=cv2.IMREAD_COLOR)
-		h, w, c = image.shape
-		#self._debug(f'Image shape: {h}H x {w}W x {c}C')
-
-	#	image = image[:, :, 0]
-		image=self.filter.cvGrayscale(image)
-	#	image=self.sobel(image)
-	#	image=self.thresholding(image)
-	#	image=self.cvDeskew(image)
-	#	image=self.opening(image)
-	#	image=self.smooth(image)
-	#	image=self.cvCanny(image)
-		self._debug("Saving processed img as {}".format(outImg))
-		cv2.imwrite(outImg,image)
-		return(outImg)
-	#def _processImg
+	def getImageOCR(self,onlyClipboard=False,onlyScreen=False,lang="en"):
+		img=self._getImgForOCR(onlyClipboard,onlyScreen)
+		imgPIL=None
+		if os.path.isfile(img):
+			img=self._processImg(img)
+			try:
+				imgPIL = Image.open(img)
+				self._debug("Opened IMG. Waiting OCR")
+			except Exception as e:
+				print(e)
+		if imgPIL:
+			txt=self._readImg(imgPIL,lang=lang)
+		return(txt)
+	#def getImageOCR
 
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
 		outImg="/tmp/out.png"
@@ -138,8 +134,26 @@ class imageprocessing():
 		return(outImg)
 	#def _getImgForOCR
 
-	def _readImg(self,imgPIL,lang="en"):
+	def _processImg(self,img):
+		outImg="{}".format(img)
+		image=cv2.imread(img,flags=cv2.IMREAD_COLOR)
+		h, w, c = image.shape
+		#self._debug(f'Image shape: {h}H x {w}W x {c}C')
 
+	#	image = image[:, :, 0]
+		image=self.filter.cvGrayscale(image)
+	#	image=self.sobel(image)
+	#	image=self.thresholding(image)
+	#	image=self.cvDeskew(image)
+	#	image=self.opening(image)
+	#	image=self.smooth(image)
+	#	image=self.cvCanny(image)
+		self._debug("Saving processed img as {}".format(outImg))
+		cv2.imwrite(outImg,image)
+		return(outImg)
+	#def _processImg
+
+	def _readImg(self,imgPIL,lang="en"):
 		txt=""
 		if lang=="en":
 			tsslang="eng"
@@ -150,7 +164,7 @@ class imageprocessing():
 
 		imgPIL=imgPIL.convert('L').resize([5 * _ for _ in imgPIL.size], Image.BICUBIC)
 		imgPIL.save("/tmp/proc.png")
-		print("Reading with {}".format(tsslang))
+		print("Reading with LANG {} - ".format(tsslang,lang))
 		with tesserocr.PyTessBaseAPI(lang=tsslang,psm=11) as api:
 			api.ReadConfigFile('digits')
 			# Consider having string with the white list chars in the config_file, for instance: "0123456789"
@@ -162,31 +176,17 @@ class imageprocessing():
 			api.Recognize()
 			txt=api.GetUTF8Text()
 			self._debug((api.AllWordConfidences()))
-		#txt=tesserocr.image_to_text(imgPIL,lang="spa")
+		#txt=tesserocr.image_to_text(imgPIL,lang=tsslang)
 		txt=self._hunspellCheck(txt,lang)
 		return(txt)
 	#def _readImg
 
-	def getImageOCR(self,onlyClipboard=False,onlyScreen=False,lang="en"):
-		img=self._getImgForOCR(onlyClipboard,onlyScreen)
-		imgPIL=None
-		if os.path.isfile(img):
-			img=self._processImg(img)
-			try:
-				imgPIL = Image.open(img)
-				self._debug("Opened IMG. Waiting OCR")
-			except Exception as e:
-				print(e)
-		if imgPIL:
-			txt=self._readImg(imgPIL,lang=lang)
-		return(txt)
-	#def getImageOCR
-
 	def _hunspellCheck(self,txt,lang="en"):
 		dicF="/usr/share/hunspell/{}.dic".format(lang)
 		if os.path.exists(dicF)==False:
-			defaultLocale=locale.getDefaultLocale()
+			defaultLocale=locale.getdefaultlocale()
 			dicF="/usr/share/hunspell/{}.dic".format(defaultLocale[0].split("_")[0])
+		self._debug("Selected DICT {}".format(dicF))
 		spell=hunspell.HunSpell(dicF,dicF.replace(".dic",".aff"))
 		correctedTxt=[]
 		for word in txt.split():
