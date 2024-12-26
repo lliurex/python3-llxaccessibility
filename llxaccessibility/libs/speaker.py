@@ -43,8 +43,6 @@ class speaker():
 
 	def _runFestival(self,txt):
 		cfg=self.kconfig.getTTSConfig()
-		print("******************")
-		print(cfg)
 		if cfg["orca"]==True:
 			if self.orca==None:
 				self.orca=orca.speech
@@ -53,13 +51,19 @@ class speaker():
 			self.orca.speak(txt)
 		else:
 			confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
+			stretch=cfg.get("stretch",1)
+			rate=cfg.get("rate",1)
+			speed=cfg.get("speed",1)
+			stretch=stretch+((stretch-1)/100)
+			voiceLanguage=self.kconfig.getTextFromValueKScript("ocrwindow","voice",cfg.get("voice",0))
+			voice=self._getDefaultVoiceForLanguage(voiceLanguage)
+			self._debug("Voice: {0}\nStretch: {1} Rate:{2} Speed:{3}".format(voice,stretch,rate,speed))
 			p=subprocess.Popen(["festival","--pipe"],stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE)
-			if self.voice.startswith("voice_")==False:
-				self.voice="voice_{}".format(self.voice)
-			self.voice="voice_upc_ca_mar_hts"
-			p.stdin.write("({})\n".format(cfg["voice"]).encode("utf8"))
-			p.stdin.write("(Parameter.set 'Duration_Stretch {})\n".format(cfg["stretch"]).encode("utf8"))
-			p.stdin.write("(set! utt (Utterance Text {}))\n".format(txt).encode("iso8859-1"))
+			if voice.startswith("voice_")==False:
+				voice="voice_{}".format(voice)
+			p.stdin.write("({})\n".format(voice).encode("utf8"))
+			p.stdin.write("(Parameter.set 'Duration_Stretch {})\n".format(stretch).encode("utf8"))
+			p.stdin.write("(set! utt (Utterance Text {}))\n".format(txt).encode("utf8"))
 			p.stdin.write("(utt.synth utt)\n".encode("utf8"))
 			p.stdin.write("(utt.save.wave utt \"/tmp/.baseUtt.wav\" \'riff)\n".encode("utf8"))
 			p.communicate()
@@ -85,4 +89,16 @@ class speaker():
 				prc=subprocess.run(["play",mp3File])
 		return 
 	#def run
+
+	def _getDefaultVoiceForLanguage(self,lang):
+		self._debug("Search voice for {}".format(lang))
+		wrkdir=os.path.join("/","usr","share","festival","voices")
+		lang=lang.lower()
+		if lang=="valencian":
+			lang="catalan"
+		if os.path.exists(os.path.join(wrkdir,lang))==False:
+			lang="english"
+		defaultVoice=os.listdir(os.path.join(wrkdir,lang))[0]
+		return(defaultVoice)
+
 #class speaker
