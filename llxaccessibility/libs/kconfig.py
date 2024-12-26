@@ -113,6 +113,8 @@ class kconfig():
 		for key in ["pitch","stretch","voice","rate","orca","vlc","synth"]:
 			cfg=self.readKFile("kwinrc","Script-ocrwindow",key.capitalize())
 			if isinstance(cfg,str):
+				if len(cfg)==0:
+					continue
 				if cfg=="true":
 					cfg=True
 				elif cfg=="false":
@@ -120,7 +122,7 @@ class kconfig():
 				elif cfg.isnumeric()==True:
 					cfg=int(cfg)
 				elif cfg.isalpha()==False: #decimal
-					cfg=float(a)
+					cfg=float(cfg)
 			kconfig.update({key:cfg})
 		return(kconfig)
 	#def getTTSConfig
