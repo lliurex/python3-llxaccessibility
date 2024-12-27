@@ -87,7 +87,7 @@ class filters():
 		rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 		return rotated
 
-class imageprocessing():
+class imageProcessing():
 	def __init__(self,parent=None):
 		self.dbg=True
 		self.filter=filters()
