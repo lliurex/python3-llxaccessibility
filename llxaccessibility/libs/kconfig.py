@@ -110,7 +110,7 @@ class kconfig():
 	def getTTSConfig(self):
 		#REM SYNTH IS NOT FALSE, it's one from orca,synth,vlc
 		kconfig={}
-		for key in ["pitch","stretch","voice","rate","orca","vlc","synth"]:
+		for key in ["pitch","stretch","voice","rate","vlc","synth","clipboard","filter","screenshot","spellchecker"]:
 			cfg=self.readKFile("kwinrc","Script-ocrwindow",key.capitalize())
 			if isinstance(cfg,str):
 				if len(cfg)==0:
@@ -124,8 +124,21 @@ class kconfig():
 				elif cfg.isalpha()==False: #decimal
 					cfg=float(cfg)
 			kconfig.update({key:cfg})
+		kconfig.update({"orca":self._getOrcaConfig()})
 		return(kconfig)
 	#def getTTSConfig
+
+	def _getOrcaConfig(self):
+		orcaConfig=os.path.join(os.environ["HOME"],".local","share","orca","user-settings.conf")
+		config={}
+		fContent=""
+		if os.path.exists(orcaConfig):
+			with open(orcaConfig,"r") as f:
+				fContent=f.read()
+			if len(fContent)>0:
+				config=json.loads(fContent)
+		return config
+	#def _getOrcaConfig
 
 	def _getKScriptPath(self,script):
 		scriptPath=script
