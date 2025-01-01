@@ -37,7 +37,7 @@ if __name__ == '__main__':
         platforms='UNIX',
 #        scripts = [''],
         package_dir = {'':''},
-        packages = ['llxaccessibility'],
+        packages = ['llxaccessibility','llxaccessibility.libs'],
         data_files = [],
         classifiers=[
                 'Development Status :: 4 - Beta',

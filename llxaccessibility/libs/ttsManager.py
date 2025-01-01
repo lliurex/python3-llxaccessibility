@@ -5,7 +5,8 @@ from orca import orca
 import subprocess
 from datetime import datetime
 from collections import OrderedDict
-from .speaker import speaker 
+from .speaker import speaker
+from .kconfig import kconfig
 
 class manager():
 	def __init__(self):
@@ -23,6 +24,8 @@ class manager():
 		self.setRate(1)
 		self.voice="JuntaDeAndalucia_es_pa_diphone"
 		self.synth="vlc"
+		self.speaker=speaker()
+		self.kconfig=kconfig()
 	#def __init__
 
 	def _debug(self,msg):
@@ -57,8 +60,8 @@ class manager():
 		if isinstance(currentDate,str)==False:
 			currentDate=currentDate.strftime("%Y%m%d_%H%M%S")
 		self._debug("Date type {}".format(type(currentDate)))
-		spk=speaker(txtFile=txtFile,stretch=self.stretch,voice=self.voice,date=currentDate,player=self.synth)
-		spk.run()
+		self.speaker.setParms(txtFile=txtFile,stretch=self.stretch,voice=self.voice,date=currentDate,synth=self.synth)
+		self.speaker.run()
 
 	def invokeReader(self,txt):
 		currentDate=datetime.now()

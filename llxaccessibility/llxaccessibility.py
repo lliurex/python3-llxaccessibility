@@ -4,21 +4,24 @@ import multiprocessing
 import json
 import llxaccessibility.libs.profileManager as profileManager
 import llxaccessibility.libs.ttsManager as ttsManager
-import llxaccessibility.libs.imageprocessing as imageprocessing
+import llxaccessibility.libs.imageProcessing as imageProcessing
 import llxaccessibility.libs.sddmManager as sddmManager
 import llxaccessibility.libs.kwinManager as kwinManager
 import llxaccessibility.libs.kconfig as kconfig
+from PySide2.QtWidgets import QApplication
 
 class client():
 	def __init__(self):
 		self.dbg=True
 		self.bus=None
+		if QApplication.instance()==None:
+			app=QApplication(["tts"])
 		self.profile=profileManager.manager()
 		self.tts=ttsManager.manager()
 		self.sddm=sddmManager.manager()
 		self.kwin=kwinManager.manager()
 		self.kconfig=kconfig.kconfig()
-		self.imageprocessing=imageprocessing.imageprocessing()
+		self.imageProcessing=imageProcessing.imageProcessing()
 	#def __init__
 
 	def _debug(self,msg):
@@ -27,11 +30,11 @@ class client():
 	#def _debug
 
 	def getDockEnabled(self):
-		return(sef.profile.getDockEnabled())
+		return(self.profile.getDockEnabled())
 	#def getDockEnabled
 
 	def setDockEnabled(self,state):
-		return(sef.profile.setDockEnabled(state))
+		return(self.profile.setDockEnabled(state))
 	#def setDockEnabled
 	
 	def getGrubBeep(self):
@@ -53,7 +56,7 @@ class client():
 		return(self.kconfig.readKFile(*args,**kwargs))
 
 	def getKWinEffects(self):
-		return(self.kwin.getKwinEffects())
+		return(self.kwin.getKWinEffects())
 
 	def getKWinScripts(self):
 		return(self.kwin.getKWinScripts())
@@ -79,7 +82,7 @@ class client():
 		return(self.kwin.getClipboardText())
 
 	def getImageOcr(self,*args,**kwargs):
-		return(self.imageprocessing.getImageOCR(*args,**kwargs))
+		return(self.imageProcessing.getImageOCR(*args,**kwargs))
 
 	def _mpLaunchCmd(self,cmd):
 		proc=None
@@ -101,7 +104,6 @@ class client():
 		proc=self.launchCmdAsync(cmd)
 		return(proc)
 	#def launchKcmModule
-
 
 	def launchCmdAsync(self,cmd):
 		proc=multiprocessing.Process(target=self._mpLaunchCmd,args=(cmd,))
@@ -171,10 +173,21 @@ class client():
 
 	def readScreen(self,*args,onlyClipboard=False,onlyScreen=False):
 		txt=""
-		if onlyScreen==False:
+		lang=self.readKFile("kwinrc","Script-ocrwindow","Voice")
+		clipboard=self.readKFile("kwinrc","Script-ocrwindow","Clipboard")
+		spellcheck=self.readKFile("kwinrc","Script-ocrwindow","Spellchecker")
+		scripts=self.kwin.getKWinScripts()
+		script=scripts.get("ocrwindow",{})
+		path=os.path.join("{}".format(os.path.dirname(script.get("path",""))),"contents","ui","config.ui")
+		lang=self.kconfig.getTextFromValueKScript(path,"Voice",lang)
+		langdict={"spanish":"es","valencian":"ca"}
+		lang=langdict.get(lang.lower(),"en")
+		if clipboard==True:
 			txt=self.getClipboardText()
-		if not txt and onlyClipboard==False:
-			txt=self.getImageOcr()
+		if len(txt)==0:
+			if spellcheck==False:
+				lang=""
+			txt=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang)
 		if len(txt)>0:
 			self.tts.invokeReader(txt)
 	#def readScreen

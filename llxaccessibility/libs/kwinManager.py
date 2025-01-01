@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import dbus,dbus.exceptions
+import os
 from PySide2.QtGui import QClipboard
 from . import kconfig
 class manager():
@@ -7,6 +8,8 @@ class manager():
 		self.dbg=False
 		self.kconfig=kconfig.kconfig()
 		self.clipboard=QClipboard()
+		self.bus=None
+	#def __init__
 
 	def getKWinEffects(self):
 		paths=["/usr/share/kwin/builtin-effects","/usr/share/kwin/effects",os.path.join(os.getenv("HOME"),".local","share","kwin","effects")]
