@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import tesserocr
+import py3langid as langid
 from spellchecker import SpellChecker
 import hunspell
 import locale
@@ -20,6 +21,10 @@ except:
 class filters():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
+
+	def resize(self,image):
+		return(cv2.resize(image, None,fx=1.5,fy=1.5))
+	#def resize
 
 	def opening(self,image):
 		kernel = np.ones((5,5),np.uint8)
@@ -52,7 +57,8 @@ class filters():
 		return(img_sobel)
 		 
 	def morph(self,image):
-		opening=cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+		#opening=cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+		opening=cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 		image=cv2.morphologyEx(image, cv2.MORPH_OPEN,opening)
 		return(image)
 
@@ -80,7 +86,7 @@ class filters():
 		mask = cv2.dilate(mask, None, iterations=2)
 		# take the bitwise of the opening image and the mask to reveal *just*
 		# the characters in the image
-		return(cv2.bitwise_and(image, image, mask=mask))
+		return(chars,cv2.bitwise_and(image, image, mask=mask))
 	
 	# get grayscale image
 	def cvGrayscale(self,image):
@@ -130,6 +136,7 @@ class imageProcessing():
 	#def _debug
 	
 	def getImageOCR(self,spellcheck=True,onlyClipboard=False,onlyScreen=False,lang="en"):
+		txt=""
 		img=self._getImgForOCR(onlyClipboard,onlyScreen)
 		imgPIL=None
 		if os.path.isfile(img):
@@ -140,8 +147,8 @@ class imageProcessing():
 			except Exception as e:
 				print(e)
 		if imgPIL:
-			txt=self._readImg(imgPIL,lang=lang,spellcheck=spellcheck)
-		return(txt)
+			lang,txt=self._readImg(imgPIL,lang=lang,spellcheck=spellcheck)
+		return(lang,txt)
 	#def getImageOCR
 
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
@@ -191,12 +198,15 @@ class imageProcessing():
 #		elif "canny" in imgFilter.lower():
 #			image=self.filter.cvCanny(image)
 		# From pyimage doc 
-		image=self.filter.cvGrayscale(image)
-		image=self.filter.thresholding(image)
+		#gimage=self.filter.resize(image)
+		gimage=self.filter.cvGrayscale(image)
+		image=self.filter.thresholding(gimage)
 		image=self.filter.distance(image)
 		image=self.filter.thresholding(image)
 		image=self.filter.morph(image)
-		image=self.filter.getContours(image)
+		(chars,image)=self.filter.getContours(image)
+		if len(chars)<10:
+			(chars,image)=self.filter.getContours(gimage)
 		# <- END
 		self._debug("Saving processed img as {}".format(outImg))
 		cv2.imwrite(outImg,image)
@@ -205,15 +215,29 @@ class imageProcessing():
 
 	def _readImg(self,imgPIL,lang="en",spellcheck=True):
 		txt=""
+		imgPIL=imgPIL.convert('L').resize([5 * _ for _ in imgPIL.size], Image.BICUBIC)
+		imgPIL.save("/tmp/proc.png")
+		self._debug("Reading with LANG {} - ".format(lang))
+		txt=self._ocrProcess(imgPIL,lang)
+		if txt.count(" ")>5:
+			detectedLang=langid.classify(txt)
+			self._debug("Detected LANGUAGE {}".format(detectedLang[0]))
+			if detectedLang[0]!=lang:
+				lang=detectedLang[0]
+				txt=self._ocrProcess(imgPIL,lang)
+		#txt=tesserocr.image_to_text(imgPIL,lang=tsslang)
+		if spellcheck==True:
+			txt=self._hunspellCheck(txt,lang)
+		return(lang,txt)
+	#def _readImg
+
+	def _ocrProcess(self,imgPIL,lang):
+		txt=""
 		tsslang="eng"
 		if lang=="es":
 			tsslang="spa"
 		elif lang=="ca":
 			tsslang="cat"
-
-		imgPIL=imgPIL.convert('L').resize([5 * _ for _ in imgPIL.size], Image.BICUBIC)
-		imgPIL.save("/tmp/proc.png")
-		self._debug("Reading with LANG {} - ".format(tsslang,lang))
 		with tesserocr.PyTessBaseAPI(lang=tsslang,psm=11) as api:
 			api.ReadConfigFile('digits')
 			# Consider having string with the white list chars in the config_file, for instance: "0123456789"
@@ -225,11 +249,8 @@ class imageProcessing():
 			api.Recognize()
 			txt=api.GetUTF8Text()
 			self._debug((api.AllWordConfidences()))
-		#txt=tesserocr.image_to_text(imgPIL,lang=tsslang)
-		if spellcheck==True:
-			txt=self._hunspellCheck(txt,lang)
 		return(txt)
-	#def _readImg
+	#def _ocrProcess
 
 	def _hunspellCheck(self,txt,lang="en"):
 		dicF="/usr/share/hunspell/{}.dic".format(lang)
