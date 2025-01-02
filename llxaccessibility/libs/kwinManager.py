@@ -156,6 +156,8 @@ class manager():
 		txt=""
 		txt=self.clipboard.text(self.clipboard.Selection)
 		txt=txt.strip()
+		if len(txt)==0:
+			txt=self.clipboard.text().strip()
 		#if not txt:
 		#	txt=self.clipboard.text()
 		#self._debug("Read selection: {}".format(txt))
