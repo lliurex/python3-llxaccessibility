@@ -13,6 +13,15 @@ class kconfig():
 	def readKFile(self,kfile,group,key):
 		cmd=["kreadconfig5","--file",kfile,"--group",group,"--key",key]
 		out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8").strip()
+		if out=="false":
+			out=False
+		elif out=="true":
+			out=True
+		elif out.isdigit():
+			if out.isdecimal():
+				out=float(out)
+			else:
+				out=int(out)
 		return(out)
 	#def readKFile
 
