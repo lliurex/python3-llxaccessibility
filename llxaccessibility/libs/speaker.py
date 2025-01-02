@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 from orca import orca
+import locale
 import subprocess
 import multiprocessing
 import tempfile
@@ -41,7 +42,7 @@ class speaker():
 		self.txtFile=kwargs.get("txtFile","")
 	#def setParms
 
-	def run(self,txt=""):
+	def run(self,txt="",locale=""):
 		confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
 		if os.path.exists(confDir)==False:
 			os.makedirs(confDir)
@@ -49,9 +50,9 @@ class speaker():
 			if os.path.exists(self.txtFile):
 				with open(self.txtFile,"r") as f:
 					txt=f.read()
-		self._runSpd(txt)
+		self._runSpd(txt,locale)
 
-	def _runSpd(self,txt):
+	def _runSpd(self,txt,locale=""):
 		cfg=self.kconfig.getTTSConfig()
 		orcaConfig=cfg.get("orca",{}).get("profiles",{}).get("default",{}).get("voices",{}).get("default",{})
 		self.tmpFile=tempfile.mktemp(suffix=".mp3")
@@ -61,11 +62,19 @@ class speaker():
 		#rate over 80. Stretch deprecated 
 		stretch=int((stretch*100)-(rate*80/100)/100)
 		#spd=speechd.Speaker("accesshelper")
-		voiceLanguage=self.kconfig.getTextFromValueKScript("ocrwindow","voice",cfg.get("voice",0))
-		(voiceLocale,voice)=self._getSpdVoiceForLanguage(voiceLanguage)
 		voices=orcaConfig.get("family",{})
-		voiceLocale=voices.get("lang",voiceLocale)
-		voice=voices.get("name",voice)
+		voiceLocale=voices.get("lang","")
+		voice=voices.get("name","")
+		if locale!="":
+			voiceLocale=locale
+			suggestedName=voices.get("variant","")
+			(tmpLocale,voice)=self._getSpdVoiceForLanguage(voiceLocale,suggestedName)
+		if voiceLocale=="":
+			voiceLocale=cfg.get("voice")
+			(voiceLocale,voice)=self._getSpdVoiceForLanguage(voiceLocale)
+		if voice=="":
+			#voiceLanguage=self.kconfig.getTextFromValueKScript("ocrwindow","voice",cfg.get("voice",0))
+			(tmpLocale,voice)=self._getSpdVoiceForLanguage(voiceLocale)
 		if self.spd!=None:
 			self.spd==None
 		self.spd=speechd.Speaker("accesshelper")
@@ -78,19 +87,28 @@ class speaker():
 		self.spd.speak(txt,self.recordPulseEnd)
 	#def _runSpd
 
-	def _getSpdVoiceForLanguage(self,lang):
+	def _getSpdVoiceForLanguage(self,lang="",suggestedName="female1"):
 		voice="female1"
-		voiceLocale="en"
+		if lang=="":
+			lang=locale.getdefaultlocale()[0].split("_")[0]
+		voiceLocale=lang
 		if lang.lower()=="valencian":
 			lang="catalan"
 			voiceLocale="ca"
 		elif lang.lower()=="spanish":
 			voiceLocale="es"
+		elif lang.lower()=="engish":
+			voiceLocale="en"
+		elif lang.lower()=="french":
+			voiceLocale="fr"
+		elif lang.lower()=="italian":
+			voiceLocale="it"
 		for spdlang in self.spd.list_synthesis_voices():
-			if spdlang[0].strip().lower().startswith(lang.lower()) and "male" in spdlang[-1].lower():
-				voiceLocale=spdlang[1]
-				voice=spdlang[-1]
-				break
+			if spdlang[1]==voiceLocale or voiceLocale=="":
+				if suggestedName.lower() == spdlang[-1].lower():
+					voiceLocale=spdlang[1]
+					voice=spdlang[0]
+					break
 		return(voiceLocale,voice)
 	#def _getSpdVoiceForLanguage
 
