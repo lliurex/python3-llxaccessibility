@@ -2,6 +2,7 @@
 import subprocess,os,sys,shutil
 import multiprocessing
 import json
+import py3langid as langid
 import llxaccessibility.libs.profileManager as profileManager
 import llxaccessibility.libs.ttsManager as ttsManager
 import llxaccessibility.libs.imageProcessing as imageProcessing
@@ -182,8 +183,13 @@ class client():
 		lang=self.kconfig.getTextFromValueKScript(path,"Voice",lang)
 		langdict={"spanish":"es","valencian":"ca"}
 		lang=langdict.get(lang.lower(),"en")
+		print("CLIPBOARD: {}".format(clipboard))
 		if clipboard==True:
 			txt=self.getClipboardText()
+			detectedLang=langid.classify(txt)
+			self._debug("Detected CLIPBOARD LANGUAGE {}".format(detectedLang[0]))
+			if detectedLang[0]!=lang:
+				lang=detectedLang[0]
 		if len(txt)==0:
 			if spellcheck==False:
 				lang=""

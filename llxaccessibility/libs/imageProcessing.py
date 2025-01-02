@@ -160,12 +160,12 @@ class imageProcessing():
 			if img:
 				self._debug("Reading clipboard IMG")
 				img.save(outImg, "PNG")
-		elif onlyScreen==False:
-			img=self.clipboard.pixmap()
-			if img:
-				self._debug("Reading clipboard PXM")
-				img.save(outImg, "PNG")
-		elif onlyClipboard==False:
+			else:
+				img=self.clipboard.pixmap()
+				if img:
+					self._debug("Reading clipboard PXM")
+					img.save(outImg, "PNG")
+		if img==None and onlyClipboard==False:
 			self._debug("Taking Screenshot")
 			if cfg.get("Screenshot",False)==False:
 				subprocess.run(["spectacle","-a","-e","-b","-c","-o",outImg])
