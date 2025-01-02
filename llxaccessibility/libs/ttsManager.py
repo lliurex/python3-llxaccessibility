@@ -56,14 +56,15 @@ class manager():
 			self.synth="orca"
 	#def setVoice
 
-	def sayFile(self,txtFile,currentDate):
+	def sayFile(self,txtFile,currentDate,locale=""):
 		if isinstance(currentDate,str)==False:
 			currentDate=currentDate.strftime("%Y%m%d_%H%M%S")
 		self._debug("Date type {}".format(type(currentDate)))
 		self.speaker.setParms(txtFile=txtFile,stretch=self.stretch,voice=self.voice,date=currentDate,synth=self.synth)
-		self.speaker.run()
+		self.speaker.run(locale=locale)
+	#def sayFile
 
-	def invokeReader(self,txt):
+	def invokeReader(self,txt,lang=""):
 		currentDate=datetime.now()
 		fileName="{}.txt".format(currentDate.strftime("%Y%m%d_%H%M%S"))
 		txtFile=os.path.join(self.txtDir,fileName)
@@ -71,7 +72,7 @@ class manager():
 		with open(txtFile,"w") as f:
 			f.write("\"{}\"".format(txt))
 		self._debug("Generating with Strech {}".format(self.stretch))
-		prc=self.sayFile(txtFile,currentDate)
+		prc=self.sayFile(txtFile,currentDate,locale=lang)
 		return(prc)
 	#def _invokeReader
 

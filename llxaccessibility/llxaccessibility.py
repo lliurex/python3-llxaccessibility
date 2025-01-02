@@ -187,9 +187,9 @@ class client():
 		if len(txt)==0:
 			if spellcheck==False:
 				lang=""
-			txt=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang)
+			(lang,txt)=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang)
 		if len(txt)>0:
-			self.tts.invokeReader(txt)
+			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
 
 #class client
