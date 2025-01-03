@@ -3,10 +3,12 @@ import dbus,dbus.exceptions
 import os
 from PySide2.QtGui import QClipboard
 from . import kconfig
+from . import a11Manager
 class manager():
 	def __init__(self,parent=None):
 		self.dbg=False
 		self.kconfig=kconfig.kconfig()
+		self.a11y=a11Manager.a11Manager()
 		self.clipboard=QClipboard()
 		self.bus=None
 	#def __init__
@@ -154,14 +156,17 @@ class manager():
 
 	def getClipboardText(self):
 		txt=""
-		txt=self.clipboard.text(self.clipboard.Selection)
+		#txt=self.clipboard.text(self.clipboard.Selection)
+		self.clipboard.clear()
 		txt=txt.strip()
 		if len(txt)==0:
-			txt=self.clipboard.text().strip()
+			self.a11y.selectAll()
+			txt=self.clipboard.text(self.clipboard.Clipboard).strip()
+			if len(txt)==0:
+				txt=self.clipboard.text(self.clipboard.Clipboard).strip()
 		#if not txt:
 		#	txt=self.clipboard.text()
 		#self._debug("Read selection: {}".format(txt))
 		return(txt)
 	#def _getClipboardText
-	
 #class kwinManager
