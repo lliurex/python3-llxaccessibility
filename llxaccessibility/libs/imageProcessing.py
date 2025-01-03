@@ -270,18 +270,21 @@ class imageProcessing():
 
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
 		cfg=self.kconfig.getTTSConfig()
+		print("PASO")
 		outImg="/tmp/out.png"
 		img=None
+		onlyScreen=False
 		if onlyScreen==False:
-			img=self.clipboard.image()
+			img=self.clipboard.image(self.clipboard.Selection)
 			if img:
 				self._debug("Reading clipboard IMG")
 				img.save(outImg, "PNG")
 			else:
-				img=self.clipboard.pixmap()
+				img=self.clipboard.pixmap(self.clipboard.Clipboard)
 				if img:
 					self._debug("Reading clipboard PXM")
 					img.save(outImg, "PNG")
+		print("PASO2")
 		if img==None and onlyClipboard==False:
 			self._debug("Taking Screenshot")
 			if cfg.get("Screenshot",False)==False:
@@ -294,7 +297,7 @@ class imageProcessing():
 	def _processImg(self,img):
 		cfg=self.kconfig.getTTSConfig()
 		imgFilter=self.kconfig.getTextFromValueKScript("ocrwindow","filter",cfg.get("filter",0))
-		self._debug("Postprocessing img with {} filter".format(imgFilter))
+		self._debug("Postprocessing {} with {} filter".format(img,imgFilter))
 		outImg="{}".format(img)
 		image=cv2.imread(img,flags=cv2.IMREAD_COLOR)
 		#h, w, c = image.shape
@@ -318,9 +321,7 @@ class imageProcessing():
 		#image=self.filter.process(image)
 		image=self.filter.cvGrayscale(image)
 		image=self.filter.resize(image)
-		cv2.imwrite(outImg.replace(".png","10.png"),image)
 		image2=self.filter.thresholding(image)
-		cv2.imwrite(outImg.replace(".png","15.png"),image2)
 		#image=self.filter.thresholding(image)
 		#cv2.imwrite(outImg.replace(".png","15.png"),image)
 		#image=self.filter.gaussianAdaptative(image)
@@ -328,15 +329,12 @@ class imageProcessing():
 		#image=self.filter.blur(image)
 		#image=self.filter.distance(image)
 		image=self.filter.morph(image)
-		cv2.imwrite(outImg.replace(".png","20.png"),image)
 		#image=self.filter.gaussianAdaptative(image)
 		#image=self.filter.smooth(image)
 		image=self.filter.thresholding(image)
-		cv2.imwrite(outImg.replace(".png","30.png"),image)
 		image=self.filter.getContours(image,image2)
 		image=self.filter.gaussianAdaptative(image)
 		#image=self.filter.cvCanny(image)
-		cv2.imwrite(outImg.replace(".png","40.png"),image)
 ######
 #REM
 #grayscale
