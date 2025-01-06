@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import subprocess,os,sys,shutil
 import multiprocessing
+import urllib
 import json
 import py3langid as langid
 import llxaccessibility.libs.profileManager as profileManager
@@ -183,7 +184,6 @@ class client():
 		lang=self.kconfig.getTextFromValueKScript(path,"Voice",lang)
 		langdict={"spanish":"es","valencian":"ca"}
 		lang=langdict.get(lang.lower(),"en")
-		print("CLIPBOARD: {}".format(clipboard))
 		if clipboard==True:
 			txt=self.getClipboardText()
 			detectedLang=langid.classify(txt)
@@ -195,6 +195,9 @@ class client():
 				lang=""
 			(lang,txt)=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang)
 		if len(txt)>0:
+			if txt.startswith("http") and "://" in txt and txt.count(" ")==0 and txt.count("/")>2 and (".jpg" in txt or ".png" in txt):
+				urllib.request.urlretrieve(txt, "/tmp/out.png")
+				(lang,txt)=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang,img="/tmp/out.png")
 			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
 
