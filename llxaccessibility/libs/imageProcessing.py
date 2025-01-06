@@ -252,9 +252,10 @@ class imageProcessing():
 			print("imageProcessing: {}".format(msg))
 	#def _debug
 	
-	def getImageOCR(self,spellcheck=True,onlyClipboard=False,onlyScreen=False,lang="en"):
+	def getImageOCR(self,spellcheck=True,onlyClipboard=False,onlyScreen=False,lang="en",img=""):
 		txt=""
-		img=self._getImgForOCR(onlyClipboard,onlyScreen)
+		if img=="":
+			img=self._getImgForOCR(onlyClipboard,onlyScreen)
 		imgPIL=None
 		if os.path.isfile(img):
 			img=self._processImg(img)
@@ -270,7 +271,6 @@ class imageProcessing():
 
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
 		cfg=self.kconfig.getTTSConfig()
-		print("PASO")
 		outImg="/tmp/out.png"
 		img=None
 		onlyScreen=False
@@ -284,7 +284,6 @@ class imageProcessing():
 				if img:
 					self._debug("Reading clipboard PXM")
 					img.save(outImg, "PNG")
-		print("PASO2")
 		if img==None and onlyClipboard==False:
 			self._debug("Taking Screenshot")
 			if cfg.get("Screenshot",False)==False:
