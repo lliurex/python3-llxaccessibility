@@ -156,14 +156,15 @@ class manager():
 
 	def getClipboardText(self):
 		txt=""
-		#txt=self.clipboard.text(self.clipboard.Selection)
-		self.clipboard.clear()
+		txt=self.clipboard.text(self.clipboard.Selection)
 		txt=txt.strip()
 		if len(txt)==0:
 			self.a11y.selectAll()
 			txt=self.clipboard.text(self.clipboard.Clipboard).strip()
 			if len(txt)==0:
 				txt=self.clipboard.text(self.clipboard.Clipboard).strip()
+		if len(txt)!=0:
+			self.clipboard.clear()
 		#if not txt:
 		#	txt=self.clipboard.text()
 		#self._debug("Read selection: {}".format(txt))
