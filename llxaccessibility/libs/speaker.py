@@ -80,8 +80,11 @@ class speaker():
 		self.spd=speechd.Speaker("accesshelper")
 		self.spd.set_language(voiceLocale)
 		self.spd.set_synthesis_voice(voice)
+		#pitch 0.100 to -100.100 # fixed 0
+		pitch=(pitch*2)-100
+		self.spd.set_pitch(0)
+		#rate from 0.10 to -100.100
 		self.spd.set_rate(rate)
-		self.spd.set_pitch(pitch)
 		self._debug("Voice: {} VoiceLocale: {} Rate: {} Pitch: {}".format(voice,voiceLocale,rate,pitch))
 		mp=self.recordPulseStart()
 		self.spd.speak(txt,self.recordPulseEnd)
