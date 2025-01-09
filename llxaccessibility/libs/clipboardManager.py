@@ -45,7 +45,10 @@ class _klipperManager(QThread):
 
 class clipboardManager():
 	def __init__(self,*args,**kwargs):
-		dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+		try:
+			dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+		except:
+			pass
 		if QApplication.instance()==None:
 			app=QApplication(["clipman"])
 		try:
