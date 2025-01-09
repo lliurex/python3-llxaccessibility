@@ -81,9 +81,10 @@ class speaker():
 		self.spd.set_language(voiceLocale)
 		self.spd.set_synthesis_voice(voice)
 		#pitch 0.100 to -100.100 # fixed 0
-		pitch=(pitch*2)-100
+		pitch=(pitch*20)-100
 		self.spd.set_pitch(0)
 		#rate from 0.10 to -100.100
+		rate=(rate*2)-100
 		self.spd.set_rate(rate)
 		self._debug("Voice: {} VoiceLocale: {} Rate: {} Pitch: {}".format(voice,voiceLocale,rate,pitch))
 		mp=self.recordPulseStart()
