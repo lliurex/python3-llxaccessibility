@@ -11,11 +11,16 @@ import cv2
 import imutils
 import numpy as np
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 from PySide2.QtGui import QClipboard
 try:
 	from . import kconfig
 except:
 	import kconfig
+try:
+	from . import clipboardManager
+except:
+	import clipboardManager
 
 class filters():
 	def __init__(self,*args,**kwargs):
@@ -161,7 +166,7 @@ class imageProcessing():
 	def __init__(self,parent=None):
 		self.dbg=True
 		self.filter=filters()
-		self.clipboard=QClipboard()
+		self.clipboard=clipboardManager.clipboardManager()
 		self.kconfig=kconfig.kconfig()
 	#def __init__(self,parent=None):
 
@@ -173,7 +178,7 @@ class imageProcessing():
 	def getImageOCR(self,spellcheck=True,onlyClipboard=False,onlyScreen=False,lang="en",img=""):
 		txt=""
 		if img=="":
-			img=self._getImgForOCR(onlyClipboard,onlyScreen)
+			img=self._getImgForOCR() #onlyClipboard,onlyScreen)
 		imgPIL=None
 		if os.path.isfile(img):
 			img=self._processImg(img)
@@ -187,28 +192,22 @@ class imageProcessing():
 		return(lang,txt)
 	#def getImageOCR
 
+	def _readImgFromClipboard(self,mode):
+		img=self.clipboard.getImage(mode)
+		return(img)
+	#def _readImgFromClipboard
+
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
 		cfg=self.kconfig.getTTSConfig()
 		outImg="/tmp/out.png"
-		img=None
-		onlyScreen=False
+		img=self._readImgFromClipboard(QClipboard.Clipboard)
 		if onlyScreen==True:
-			clipboardTypes=[self.clipboard.Selection]
-		else:
-			clipboardTypes=[self.clipboard.Selection,self.clipboard.Clipboard]
-		for clipboardType in clipboardTypes:
-			img=self.clipboard.image(clipboardType)
-			if img:
-				self._debug("Reading clipboard IMG")
-				img.save(outImg, "PNG")
-				break
-			else:
-				img=self.clipboard.pixmap(clipboardType)
-				if img:
-					self._debug("Reading clipboard PXM")
-					img.save(outImg, "PNG")
-					break
-		if img==None and onlyScreen==True:
+			img=self._readImgFromClipboard(QClipboard.Selection)
+		if img.isNull()==False:
+			self.clipboard.popContentsAsync()
+			self._debug("Getting clipboard IMG")
+			img.save(outImg, "PNG")
+		elif onlyScreen==True:
 			self._debug("Taking Screenshot")
 			if cfg.get("Screenshot",False)==False:
 				subprocess.run(["spectacle","-a","-e","-b","-c","-o",outImg])
@@ -273,7 +272,7 @@ class imageProcessing():
 
 	def _readImg(self,imgPIL,lang="en",spellcheck=True):
 		txt=""
-		imgPIL=imgPIL.convert('L').resize([5 * _ for _ in imgPIL.size], Image.BICUBIC)
+		imgPIL=imgPIL.convert('L').resize([3 * _ for _ in imgPIL.size], Image.BICUBIC)
 		imgPIL.save("/tmp/proc.png")
 		self._debug("Reading with LANG {} - ".format(lang))
 		txt=self._ocrProcess(imgPIL,lang)
