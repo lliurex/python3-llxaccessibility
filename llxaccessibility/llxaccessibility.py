@@ -10,12 +10,13 @@ import llxaccessibility.libs.imageProcessing as imageProcessing
 import llxaccessibility.libs.sddmManager as sddmManager
 import llxaccessibility.libs.kwinManager as kwinManager
 import llxaccessibility.libs.kconfig as kconfig
+import llxaccessibility.libs.clipboardManager as clipboardManager
+import llxaccessibility.libs.a11Manager as a11Manager
 from PySide2.QtWidgets import QApplication
 
 class client():
 	def __init__(self):
 		self.dbg=True
-		self.bus=None
 		if QApplication.instance()==None:
 			app=QApplication(["tts"])
 		self.profile=profileManager.manager()
@@ -24,6 +25,8 @@ class client():
 		self.kwin=kwinManager.manager()
 		self.kconfig=kconfig.kconfig()
 		self.imageProcessing=imageProcessing.imageProcessing()
+		self.a11Manager=a11Manager.a11Manager()
+		self.clipboard=clipboardManager.clipboardManager()
 	#def __init__
 
 	def _debug(self,msg):
@@ -175,6 +178,7 @@ class client():
 
 	def readScreen(self,*args,onlyClipboard=False,onlyScreen=False):
 		txt=""
+		tmpimg="/tmp/out.png"
 		lang=self.readKFile("kwinrc","Script-ocrwindow","Voice")
 		clipboard=self.readKFile("kwinrc","Script-ocrwindow","Clipboard")
 		spellcheck=self.readKFile("kwinrc","Script-ocrwindow","Spellchecker")
@@ -184,20 +188,29 @@ class client():
 		lang=self.kconfig.getTextFromValueKScript(path,"Voice",lang)
 		langdict={"spanish":"es","valencian":"ca"}
 		lang=langdict.get(lang.lower(),"en")
-		if clipboard==True:
-			txt=self.getClipboardText()
-			detectedLang=langid.classify(txt)
-			self._debug("Detected CLIPBOARD LANGUAGE {}".format(detectedLang[0]))
-			if detectedLang[0]!=lang:
-				lang=detectedLang[0]
+		if clipboard=="":
+			clipboard=False
+		item=self.clipboard.getClipboardContents()
+		if isinstance(item,str):
+			if "://" in item and item.count(" ")==0 and item.count("/")>1:
+				protocol=item.split(":")[0]
+				if protocol.startswith("http"):
+					urllib.request.urlretrieve(item, tmpimg)
+				elif protocol.startswith("file"):
+					tmpimg="".join(item.split(":")[1:]).replace("//","/")
+				else:
+					txt=item
+			else:
+				txt=item
 		if len(txt)==0:
 			if spellcheck==False:
 				lang=""
-			(lang,txt)=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang)
+			(lang,txt)=self.getImageOcr(spellcheck=spellcheck,img=tmpimg,lang=lang)
+			#self._debug("Detected IMAGE LANGUAGE {}".format(detectedLang[0]))
+		else:
+			lang=langid.classify(txt)[0]
+			#self._debug("Detected CLIPBOARD LANGUAGE {}".format(detectedLang[0]))
 		if len(txt)>0:
-			if txt.startswith("http") and "://" in txt and txt.count(" ")==0 and txt.count("/")>2 and (".jpg" in txt or ".png" in txt):
-				urllib.request.urlretrieve(txt, "/tmp/out.png")
-				(lang,txt)=self.getImageOcr(spellcheck=spellcheck,onlyScreen=not(clipboard),lang=lang,img="/tmp/out.png")
 			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
 
