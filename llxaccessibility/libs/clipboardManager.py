@@ -3,7 +3,7 @@ import dbus,dbus.exceptions
 from PySide2.QtGui import QClipboard
 from PySide2.QtWidgets import QApplication
 from PySide2.QtCore import QThread,Signal
-import llxaccessibility.libs.a11Manager as a11Manager
+from . import a11Manager
 
 class _klipperManager(QThread):
 	def __init__(self,dbusInterface,parent=None,*args,**kwargs):
