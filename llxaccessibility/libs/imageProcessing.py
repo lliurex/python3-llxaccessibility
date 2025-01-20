@@ -22,6 +22,8 @@ try:
 except:
 	import clipboardManager
 
+TMPDIR="/tmp/.cache/accessibility/{}".format(os.environ.get("USER","tmp"))
+
 class filters():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
@@ -270,9 +272,9 @@ class filters():
 			high=low+ratio
 			if low>=255:
 				break
-			self._debug("COLOR POINTS ({0} {1}): {2}".format(low,high,colorPoints))
 			imageTh=self.binaryThresholding(image,low,high)
 			colorPoints=self.analyzeImage(imageTh,high,low)
+			self._debug("COLOR POINTS ({0} {1}): {2}".format(low,high,colorPoints))
 		imageTh=self.binaryThresholding(imageTh,low-ratio,255)
 		return(imageTh)
 #class filters
@@ -316,7 +318,7 @@ class imageProcessing():
 
 	def _getImgForOCR(self,onlyClipboard=False,onlyScreen=False):
 		cfg=self.kconfig.getTTSConfig()
-		outImg="/tmp/.cache/accessibility/{}/out.png".format(os.environ.get("USER","tmp"))
+		outImg=os.path.join(TMPDIR,"out.png")
 		if os.path.exists(os.path.dirname(outImg))==False:
 			os.makedirs(os.path.dirname(outImg))
 		for f in os.scandir(os.path.dirname(outImg)):
@@ -341,12 +343,11 @@ class imageProcessing():
 		if self.dbg==True:
 			dbgImage=image
 			cont=10
-			outDir="/tmp/.cache/accessibility/{}".format(os.environ.get("USER","tmp"))
-			if os.path.exists(outDir)==False:
-				os.makedirs(outDir)
+			if os.path.exists(TMPDIR)==False:
+				os.makedirs(TMPDIR)
 				os.chmod(outDir,0o777)
 			while True:
-				if os.path.exists(os.path.join(outDir,"out{}.png".format(cont)))==False:
+				if os.path.exists(os.path.join(TMPDIR,"out{}.png".format(cont)))==False:
 					break
 				cont+=10
 			if len(text)>0:
@@ -378,11 +379,13 @@ class imageProcessing():
 			image=self._processDarkBkgImg(image)
 		else:
 			self._debug("Light image detected")
+			image=self._processDarkBkgImg(image)
 		#If foreground=dark then test2 or test3 are way better
-			imageTh=self.filter.thresholding(image)
-			imageGaussian=self.filter.gaussianAdaptative(imageTh)
-			imageSmooth=self.filter.smooth(imageGaussian)
-			image=self._processLightBkgImg(imageSmooth)
+			#imageTh=self.filter.thresholding(image)
+			#imageGaussian=self.filter.gaussianAdaptative(imageTh)
+			#imageSmooth=self.filter.smooth(imageGaussian)
+			#self._saveDebugImg(imageSmooth,"smooth")
+			#image=self._processLightBkgImg(imageSmooth)
 		self._debug("Saving processed img as {}".format(outImg))
 		cv2.imwrite(outImg,image)
 		return(outImg)
@@ -398,9 +401,24 @@ class imageProcessing():
 		self._saveDebugImg(imageOpening,"opening")
 		imageMorph=self.filter.morph(imageOpening,ratio=100)
 		self._saveDebugImg(imageMorph,"morph")
-		imageDistance=self.filter.close(imageMorph)
-		self._saveDebugImg(imageDistance,"distance")
+		colorPoints=self.filter.analyzeImage(imageMorph)
+		cont=0
+		for key,item in colorPoints.items():
+			print(key,item)
+			if item==0:
+				cont+=1
+		if cont==2: #Plain image
+			self._debug("**********")
+			self._debug("PLAIN IMAGE DETECTED")
+			self._debug("**********")
+			imageOpening=cv2.dilate(imageOpening, None, iterations=2)
+			imageOpening=self.filter.close(imageOpening,ratio=20)
+			imageOpening=self.filter.gaussian(imageOpening)
+			imageDistance=imageMorph
+		else:
+			imageDistance=self.filter.close(imageMorph)
 		imageContours=self.filter.getContours(imageOpening,imageDistance,minWidth=200,minHeight=200)
+		self._saveDebugImg(imageContours,"contours")
 		imageGaussian=self.filter.gaussianAdaptative(imageContours)
 		imageErode=self.filter.erode(imageGaussian,ratio=1)
 		image=self.filter.thresholding(imageErode)
