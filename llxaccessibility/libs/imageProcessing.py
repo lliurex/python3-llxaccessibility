@@ -93,49 +93,10 @@ class filters():
 		return(image)
 	#def morph
 
-	def getXor(self,image,image2,minWidth=55,minHeight=55):
-		cnts=cv2.findContours(image.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_TC89_L1)
-		cnts2=cv2.findContours(image2.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-		cnts = imutils.grab_contours(cnts)
-		chars = []
-		oldchars = []
-		# loop over the contours
-		iters=2
-		while  iters>=0:
-			iters-=1
-			self._debug("Trying with {}".format(minWidth))
-			chars=[]
-			for c in cnts:
-				(x, y, w, h) = cv2.boundingRect(c)
-				if w >= minWidth and h >= minHeight:
-					chars.append(c)
-			if len(chars)<=len(oldchars) and len(oldchars)>0:
-				chars=oldchars
-				break
-			if chars==oldchars and len(chars)>0:
-				break
-			oldChars=chars
-			minWidth=minWidth/2
-			minHeight=minWidth
-
-			self._debug("Computed: {}".format(len(chars)))
-		try:
-			chars = np.vstack([chars[i] for i in range(0, len(chars))])
-		except:
-			chars=[]
-		mask = np.zeros(image2.shape[:2], dtype="uint8")
-		if len(chars):
-			hull = cv2.convexHull(chars)
-			cv2.drawContours(mask, [hull], -1, 255, -1)
-		mask = cv2.dilate(mask, None, iterations=2)
-		return cv2.bitwise_xor(image2, image, mask=mask)
-	#def getXor
-
-	def getContours(self,image,image2,minWidth=55,minHeight=120):
+	def _grabCharsFromContours(self,image)
 		# find contours in the opening image, then initialize the list of
 		# contours which belong to actual characters that we will be OCR'ing
 		cnts=cv2.findContours(image.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_TC89_L1)
-		cnts2=cv2.findContours(image2.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 		cnts = imutils.grab_contours(cnts)
 		chars = []
 		oldchars = []
@@ -158,21 +119,26 @@ class filters():
 			oldChars=chars
 
 			self._debug("Computed: {}".format(len(chars)))
-		# compute the convex hull of the characters
+		return(chars)
+	#def _grabContours
+
+	def _grabMaskForChars(self,image,imageBase,chars):
 		try:
 			chars = np.vstack([chars[i] for i in range(0, len(chars))])
 		except:
 			chars=[]
-		mask = np.zeros(image.shape[:2], dtype="uint8")
+		mask = np.zeros(imageBase.shape[:2], dtype="uint8")
 		if len(chars):
 			hull = cv2.convexHull(chars)
-			# allocate memory for the convex hull mask, draw the convex hull on
-			# the image, and then enlarge it via a dilation
 			cv2.drawContours(mask, [hull], -1, 255, -1)
 		mask = cv2.dilate(mask, None, iterations=2)
-		# take the bitwise of the opening image and the mask to reveal *just*
-		# the characters in the image
-		return cv2.bitwise_xor(image, image2, mask=mask)
+		return(mask)
+	#def _grabMaskForChars
+
+	def getContours(self,image,imageBase,minWidth=55,minHeight=120):
+		chars=self._grabCharsFromContours(image)
+		mask=self._grabMaskForChars(self,image,imageBase,chars)
+		return cv2.bitwise_xor(image, imageBase, mask=mask)
 	#def getContours
 
 	def medianBlur(self,image,kernel=2,blur=2,iterations=3):
@@ -448,7 +414,7 @@ class imageProcessing():
 		imageTh=self.filter.binaryThresholding(imageDistance,low=10)
 		imageOpening=self.filter.opening(imageTh,ratio=500)
 		self._saveDebugImg(imageOpening,"opening")
-		#imageAnd=self.filter.getXor(imageBase,imageTh)
+		#imageAnd=self.filter.getContours(imageBase,imageTh)
 		imageAnd=cv2.bitwise_and(imageBase,imageOpening)
 		imageAnd=self.filter.morph(imageAnd,ratio=1)
 		self._saveDebugImg(imageAnd,"and")
@@ -476,7 +442,7 @@ class imageProcessing():
 		imageTh=self.filter.thresholding(imageGaussian)
 		imageContours=self.filter.getContours(imageSmooth,imageTh,minWidth=5,minHeight=5)
 		image=self.filter.erode(imageContours,ratio=1)
-		image=self.filter.getXor(image,imageBase,minWidth=2,minHeight=1)
+		image=self.filter.getContours(image,imageBase,minWidth=2,minHeight=1)
 		self._saveDebugImg(image)
 		return(image)
 	#def _processAltLightBkgImg
