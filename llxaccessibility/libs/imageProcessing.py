@@ -53,8 +53,15 @@ class filters():
 		return(lightPoints)
 	#def _analyzeImage
 
-	def resize(self,image):
-		return(cv2.resize(image, None,fx=2.0,fy=2.0))
+	def sum(self,imageBase,imageOverlay):
+		image=imageBase.copy()
+		x_offset=y_offset=0
+		image[y_offset:y_offset+imageOverlay.shape[0], x_offset:x_offset+imageOverlay.shape[1]] = imageOverlay
+		return(image)
+	#def sum
+
+	def resize(self,image,scale=3):
+		return(cv2.resize(image, None,fx=scale,fy=scale))
 	#def resize
 
 	def opening(self,image,ratio=5):
@@ -62,28 +69,33 @@ class filters():
 		return cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
 	#def opening
 
-	def close(self,image,ratio=5):
+	def close(self,imageBase,ratio=5):
+		image=imageBase.copy()
 		kernel = np.ones((ratio,ratio),np.uint8)
 		return cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
 	#def close
 
-	def binaryThresholding(self,image,low=160,high=255):
+	def binaryThresholding(self,imageBase,low=160,high=255):
+		image=imageBase.copy()
 		return cv2.threshold(image, low, high, cv2.THRESH_BINARY)[1]
 	#def binaryThresholding
 
-	def thresholding(self,image,low=160,high=255):
+	def thresholding(self,imageBase,low=160,high=255):
+		image=imageBase.copy()
 		#return(cv2.threshold(image, 0, 255,cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1])
 		return cv2.threshold(image, low, high, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 	#def thresholding
 
-	def distance(self,image):
+	def distance(self,imageBase):
+		image=imageBase.copy()
 		image=cv2.distanceTransform(image,cv2.DIST_L2,5)
 		image=cv2.normalize(image, image, 0, 1.0, cv2.NORM_MINMAX)
 		image=(image * 255).astype("uint8")
 		return(image)
 	#def distance
 		 
-	def morph(self,image,ratio=5):
+	def morph(self,imageBase,ratio=5):
+		image=imageBase.copy()
 		kernel = np.ones((ratio,ratio),np.uint8)
 		openingKernel=cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ratio, ratio))
 		image=cv2.dilate(image,kernel)
@@ -93,7 +105,7 @@ class filters():
 		return(image)
 	#def morph
 
-	def _grabCharsFromContours(self,image)
+	def _grabCharsFromContours(self,image,minWidth=55,minHeight=120):
 		# find contours in the opening image, then initialize the list of
 		# contours which belong to actual characters that we will be OCR'ing
 		cnts=cv2.findContours(image.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_TC89_L1)
@@ -120,7 +132,7 @@ class filters():
 
 			self._debug("Computed: {}".format(len(chars)))
 		return(chars)
-	#def _grabContours
+	#def _grabCharsFromContours
 
 	def _grabMaskForChars(self,image,imageBase,chars):
 		try:
@@ -136,19 +148,21 @@ class filters():
 	#def _grabMaskForChars
 
 	def getContours(self,image,imageBase,minWidth=55,minHeight=120):
-		chars=self._grabCharsFromContours(image)
-		mask=self._grabMaskForChars(self,image,imageBase,chars)
+		chars=self._grabCharsFromContours(image,minWidth,minHeight)
+		mask=self._grabMaskForChars(image,imageBase,chars)
 		return cv2.bitwise_xor(image, imageBase, mask=mask)
 	#def getContours
 
-	def medianBlur(self,image,kernel=2,blur=2,iterations=3):
+	def medianBlur(self,imageBase,kernel=2,blur=4,iterations=1):
+		image=imageBase.copy()
 		kernel = np.ones((kernel,kernel),np.uint8)
 		dilation = cv2.dilate(image,kernel,iterations =iterations)
 		image = cv2.medianBlur(image,blur)
 		return(image)
 	#def medianBlur
 
-	def blur(self,image):
+	def blur(self,imageBase):
+		image=imageBase.copy()
 		kernel = np.ones((5,5),np.uint8)
 		dilation = cv2.dilate(image,kernel,iterations =5)
 		blur =cv2.GaussianBlur(dilation,(3,3),0)
@@ -163,25 +177,30 @@ class filters():
 		return(image)
 	#def erode
 	
-	def cvGrayscale(self,image):
+	def cvGrayscale(self,imageBase):
+		image=imageBase.copy()
 		return(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
 	#def cvGrayscale
 
-	def cvCanny(self,image,low=100,high=200):
+	def cvCanny(self,imageBase,low=100,high=200):
+		image=imageBase.copy()
 		return cv2.Canny(image, low, high)
 	#def cvCanny
 
-	def smooth(self,image):
+	def smooth(self,imageBase):
+		image=imageBase.copy()
 		return cv2.bilateralFilter(image,15,50,50)
 	#def smooth
 
-	def gaussianAdaptative(self,image,ratio=5):
+	def gaussianAdaptative(self,imageBase,ratio=5):
+		image=imageBase.copy()
 		blur=cv2.GaussianBlur(image,(ratio,ratio),0)
 		ret3,image = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-		return(image)
+		return(imageBase)
 	#def gaussianAdaptative
 
-	def gaussian(self,image):
+	def gaussian(self,imageBase):
+		image=imageBase.copy()
 		blur = cv2.GaussianBlur(
 			src=image,
 			ksize=(3, 3),
@@ -311,7 +330,7 @@ class imageProcessing():
 			cont=10
 			if os.path.exists(TMPDIR)==False:
 				os.makedirs(TMPDIR)
-				os.chmod(outDir,0o777)
+				os.chmod(TMPDIR,0o777)
 			while True:
 				if os.path.exists(os.path.join(TMPDIR,"out{}.png".format(cont)))==False:
 					break
@@ -327,7 +346,7 @@ class imageProcessing():
 					(209, 80, 0, 255), #font color
 			3) #font stroke
 
-			cv2.imwrite("{0}/out{1}.png".format(outDir,cont),dbgImage)
+			cv2.imwrite("{0}/out{1}.png".format(TMPDIR,cont),dbgImage)
 	#def _saveDebugImg(self,image):
 
 	def _processImg(self,img):
@@ -339,13 +358,14 @@ class imageProcessing():
 		image=self.filter.cvGrayscale(image)
 		image=self.filter.resize(image)
 		self._saveDebugImg(image)
-		colorPoints=self.filter.analyzeImage(image)
-		if colorPoints.get("light",0)<(colorPoints.get("dark",0)+colorPoints.get("mid",0)):
-			self._debug("Dark image detected")
-			image=self._processDarkBkgImg(image)
-		else:
-			self._debug("Light image detected")
-			image=self._processDarkBkgImg(image)
+	#	colorPoints=self.filter.analyzeImage(image)
+	#	if colorPoints.get("light",0)<(colorPoints.get("dark",0)+colorPoints.get("mid",0)):
+	#		self._debug("Dark image detected")
+	#		image=self._processDarkBkgImg(image)
+	#	else:
+	#		self._debug("Light image detected")
+	#		image=self._processAltLightBkgImg(image)
+		image=self._processDarkBkgImg(image)
 		#If foreground=dark then test2 or test3 are way better
 			#imageTh=self.filter.thresholding(image)
 			#imageGaussian=self.filter.gaussianAdaptative(imageTh)
@@ -359,43 +379,72 @@ class imageProcessing():
 
 	def _processDarkBkgImg(self,image):
 		imageBase=image
-		thRange=15
-		imageBth=self.filter.thresholdingMask(image,thRange)
-		#imageBth=self.filter.binaryThresholding(image,low=40,high=55)
-		#imageBth=self.filter.binaryThresholding(imageBth,low=40,high=255)
-		imageOpening=self.filter.opening(imageBth)
-		self._saveDebugImg(imageOpening,"opening")
-		imageMorph=self.filter.morph(imageOpening,ratio=100)
+		imageBlur=self.filter.gaussian(image)
+		thRange=25
+		imageBth=self.filter.thresholdingMask(imageBlur,thRange)
+		imageBthEroded=self.filter.thresholdingMask(image,thRange)
+		imageBthCanny=self.filter.cvCanny(imageBthEroded,thRange)
+		imageBthCanny=self.filter.binaryThresholding(imageBthCanny)
+		imageBthCanny=cv2.dilate(imageBthCanny, None, iterations=2)
+		self._saveDebugImg(imageBth,"thMask")
+		self._saveDebugImg(imageBthEroded,"thMaskEroded")
+		self._saveDebugImg(imageBthCanny,"thMaskCanny")
+		#imageOpening=self.filter.opening(imageBth)
+		#self._saveDebugImg(imageOpening,"opening")
+		#imageMorphEroded=cv2.bitwise_not(imageBthEroded)
+		#self._saveDebugImg(imageMorphEroded,"morphEroded")
+		imageMorph=self.filter.sum(imageBthEroded,cv2.bitwise_not(imageBthCanny))
+		#self._saveDebugImg(imageMorph,"morphEroded1")
+		#imageMorph=self.filter.morph(imageMorph,ratio=3)
+		#imageMorph=cv2.bitwise_not(imageMorph)
 		self._saveDebugImg(imageMorph,"morph")
+		#imageDilate=cv2.dilate(imageOpening, None, iterations=2)
+		#self._saveDebugImg(imageDilate,"dilate")
+
 		colorPoints=self.filter.analyzeImage(imageMorph)
 		cont=0
 		for key,item in colorPoints.items():
-			print(key,item)
 			if item==0:
 				cont+=1
 		if cont==2: #Plain image
 			self._debug("**********")
 			self._debug("PLAIN IMAGE DETECTED")
 			self._debug("**********")
-			imageOpening=cv2.dilate(imageOpening, None, iterations=2)
-			imageOpening=self.filter.close(imageOpening,ratio=20)
+			#imageOpening=cv2.dilate(imageOpening, None, iterations=2)
+			imageOpening=self.filter.close(imageMorph,ratio=3)
 			imageOpening=self.filter.gaussian(imageOpening)
-			imageDistance=imageMorph
+			#imageDistance=imageMorph
 		else:
-			imageDistance=self.filter.close(imageMorph)
-		imageContours=self.filter.getContours(imageOpening,imageDistance,minWidth=200,minHeight=200)
+			imageOpening=imageMorph
+		#imageDistance=self.filter.close(imageOpening)
+		self._saveDebugImg(imageOpening,"opening")
+		imageContours=self.filter.getContours(imageOpening,imageBthCanny,minWidth=200,minHeight=200)
+		#imageContours=cv2.bitwise_not(imageContours)
 		self._saveDebugImg(imageContours,"contours")
-		imageGaussian=self.filter.gaussianAdaptative(imageContours)
-		imageErode=self.filter.erode(imageGaussian,ratio=1)
-		image=self.filter.thresholding(imageErode)
-		image=cv2.dilate(image, None, iterations=2)
-		image=self.filter.binaryThresholding(image,low=250)
+		imageSum=self.filter.sum(imageContours,cv2.bitwise_not(imageOpening))
+		image=self.filter.gaussianAdaptative(imageSum)
+		self._saveDebugImg(imageSum,"Gaussian")
+		#imageErode=self.filter.erode(imageGaussian,ratio=1)
+		#image=self.filter.thresholding(imageErode)
+		#image=cv2.dilate(image, None, iterations=2)
+		#image=self.filter.binaryThresholding(image,low=250)
 		#image=self.filter.erode(image,1)
-		image=self.filter.opening(image,5)
-		image=self.filter.erode(image,2)
-		image=self.filter.close(image,6)
-		image=self.filter.erode(image,1)
-		self._saveDebugImg(image,"final")
+		#image=self.filter.opening(image,5)
+		#image=self.filter.erode(image,2)
+		#image=self.filter.close(image,4)
+		#image=self.filter.erode(image,1)
+		#image=self.filter.sum(imageMorph,image)
+		self._saveDebugImg(imageBthEroded,"beforeEroded")
+		self._saveDebugImg(cv2.bitwise_not(image),"before")
+		image1=self.filter.sum(cv2.bitwise_not(image),imageBthEroded)
+		image2= cv2.bitwise_xor(image, imageBthEroded)
+		image= cv2.bitwise_and(image1, image2)
+		#image2= self.filter.close(image2)
+		#image=self.filter.sum(image,imageSum)
+		self._saveDebugImg(image1,"final")
+		image2=self.filter.morph(image2, 1)
+		self._saveDebugImg(image2,"final2")
+		image= cv2.bitwise_and(image1, image2)
 		return(image)
 	#def _processDarkBkgImg
 
@@ -407,16 +456,16 @@ class imageProcessing():
 		#self._saveDebugImg(imageAnd,"and1")
 		#imageGaussian=self.filter.gaussianAdaptative(imageAnd)
 		#imageSmooth=self.filter.smooth(imageGaussian)
-		#imageTh=self.filter.binaryThresholding(imageSmooth)
-		imageDistance=self.filter.distance(imageMorph)
+		imageTh=self.filter.binaryThresholding(imageSmooth)
+		imageDistance=self.filter.distance(imageTh)
 		self._saveDebugImg(imageDistance,"distance")
 		#imageGaussian=self.filter.gaussianAdaptative(imageDistance)
 		imageTh=self.filter.binaryThresholding(imageDistance,low=10)
 		imageOpening=self.filter.opening(imageTh,ratio=500)
 		self._saveDebugImg(imageOpening,"opening")
-		#imageAnd=self.filter.getContours(imageBase,imageTh)
-		imageAnd=cv2.bitwise_and(imageBase,imageOpening)
-		imageAnd=self.filter.morph(imageAnd,ratio=1)
+		imageAnd=self.filter.getContours(imageBase,imageTh)
+		#imageAnd=cv2.bitwise_not(imageBase,imageOpening)
+		#imageAnd=self.filter.morph(imageAnd,ratio=1)
 		self._saveDebugImg(imageAnd,"and")
 		#imageContours=self.filter.getContours(imageAnd,imageBase,minWidth=10,minHeight=10)
 		#image=self.filter.opening(imageAnd,ratio=2)
@@ -431,7 +480,7 @@ class imageProcessing():
 		imageOpening=self.filter.opening(image,ratio=2)
 		self._saveDebugImg(imageOpening)
 		imageGaussian=self.filter.gaussianAdaptative(imageOpening)
-		imageDistnace=self.filter.distance(imageGaussian)
+		imageDistance=self.filter.distance(imageGaussian)
 		imageSmooth=self.filter.smooth(imageDistance)
 		imageTh=self.filter.thresholding(imageSmooth,low=210,high=250)
 		imageDistance=self.filter.morph(imageTh,ratio=6)
@@ -449,7 +498,7 @@ class imageProcessing():
 
 	def _readImg(self,imgPIL,lang="en",spellcheck=True):
 		txt=""
-		imgPIL=imgPIL.convert('L').resize([3 * _ for _ in imgPIL.size], Image.BICUBIC)
+		imgPIL=imgPIL.convert('L').resize([1 * _ for _ in imgPIL.size], Image.BICUBIC)
 		imgPIL.save("/tmp/proc.png")
 		self._debug("Reading with LANG {} - ".format(lang))
 		txt=self._ocrProcess(imgPIL,lang)
