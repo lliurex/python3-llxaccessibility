@@ -498,7 +498,7 @@ class imageProcessing():
 
 	def _readImg(self,imgPIL,lang="en",spellcheck=True):
 		txt=""
-		imgPIL=imgPIL.convert('L').resize([1 * _ for _ in imgPIL.size], Image.BICUBIC)
+		imgPIL=imgPIL.convert('L').resize([2 * _ for _ in imgPIL.size], Image.BICUBIC)
 		imgPIL.save("/tmp/proc.png")
 		self._debug("Reading with LANG {} - ".format(lang))
 		txt=self._ocrProcess(imgPIL,lang)
