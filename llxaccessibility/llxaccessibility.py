@@ -176,9 +176,17 @@ class client():
 				os.unlink("/usr/share/accesswizard/tools/timeout")
 	#def setOrcaSDDM
 
-	def readScreen(self,*args,onlyClipboard=False,onlyScreen=False):
+	def trackFocus(self,callback,oneshot=False):
+		self.a11Manager.trackFocus(callback,oneshot)
+	#def trackFocus
+
+	def getCurrentFocusCoords(self,):
+		return(self.a11Manager.getCurrentFocusCoords())
+	#def trackFocus
+
+	def readScreen(self,*args,onlyClipboard=False,onlyScreen=False,**kwargs):
 		txt=""
-		tmpimg="/tmp/out.png"
+		tmpimg=kwargs.get("img","/tmp/out.png")
 		lang=self.readKFile("kwinrc","Script-ocrwindow","Voice")
 		clipboard=self.readKFile("kwinrc","Script-ocrwindow","Clipboard")
 		spellcheck=self.readKFile("kwinrc","Script-ocrwindow","Spellchecker")
