@@ -19,18 +19,23 @@ class a11Manager():
 	#def _debug
 
 	def activeWindow(self):
-		idx=pyatspi.Registry.getDesktopCount()
-		desktop = pyatspi.Registry.getDesktop(0)
-		for app in desktop:
-			for window in app:
-				if window.getState().contains(pyatspi.STATE_ACTIVE):
-					for component in window:
+		desktops=pyatspi.Registry.getDesktopCount()
+		component=None
+		for idx in range(0,desktops):
+			desktop = pyatspi.Registry.getDesktop(idx)
+			for app in desktop:
+				for window in app:
+					if window.getState().contains(pyatspi.STATE_ACTIVE):
+						component=window[-1]
+				try:
+					if window.getState().contains(pyatspi.STATE_ACTIVE):
 						break
-			try:
-				if window.getState().contains(pyatspi.STATE_ACTIVE):
-					break
-			except Exception as e:
-				pass
+				except Exception as e:
+					pass
+			if component!=None:
+				break
+		print("CM: {}".format(component))
+		print("AC: {}".format(app))
 		return app
 	#def activeWindow
 
@@ -86,17 +91,19 @@ class a11Manager():
 			focused=None
 			if root.getState().contains(pyatspi.STATE_FOCUSED) and root.getState().contains(pyatspi.STATE_SHOWING):
 				focused=root
-			for tree in root:
-				focused=inspectTree(index + 1, tree)
-				if focused!=None:
-					break
+			else:
+				for tree in root:
+					focused=inspectTree(index + 1, tree)
+					if focused!=None:
+						break
 			return(focused)
 		data={"position":0,"x":0,"y":0,"size":0,"w":0,"h":0}
 		focused=inspectTree(0, self.activeWindow())
-		if focused!=None:
-			position=focused.get_position(pyatspi.component.XY_SCREEN)
-			size=focused.get_size()
-			data={"position":-1,"x":position.x,"y":position.y,"size":-1,"w":size.x,"h":size.y}
+		if focused==None:
+			focused=self.activeWindow()
+		position=focused.get_position(pyatspi.component.XY_SCREEN)
+		size=focused.get_size()
+		data={"position":-1,"x":position.x,"y":position.y,"size":-1,"w":size.x,"h":size.y}
 		return(data)
 	#def getCurrentFocusCoords
 
