@@ -34,8 +34,6 @@ class a11Manager():
 					pass
 			if component!=None:
 				break
-		print("CM: {}".format(component))
-		print("AC: {}".format(app))
 		return app
 	#def activeWindow
 
@@ -68,6 +66,7 @@ class a11Manager():
 		register=pyatspi.Registry()
 		register.registerEventListener(self._emitFocusChanged, "object:state-changed:focused")
 		register.registerEventListener(self._emitFocusChanged, "object:state-changed:selected")
+		#register.registerEventListener(self._emitFocusChanged, "object:state-changed:")
 		register.start()
 		self._debug("Bring up registry")
 
