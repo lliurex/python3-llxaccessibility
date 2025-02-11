@@ -1,5 +1,6 @@
-import pyatspi
+import pyatspi,os
 import time
+import threading
 
 keys={"CTRL":105,
 	"a":38,
@@ -18,11 +19,22 @@ class a11Manager():
 	#def _debug
 
 	def activeWindow(self):
-		desktop = pyatspi.Registry.getDesktop(0)
-		for app in desktop:
-			for window in app:
-				if window.getState().contains(pyatspi.STATE_ACTIVE):
-					return app
+		desktops=pyatspi.Registry.getDesktopCount()
+		component=None
+		for idx in range(0,desktops):
+			desktop = pyatspi.Registry.getDesktop(idx)
+			for app in desktop:
+				for window in app:
+					if window.getState().contains(pyatspi.STATE_ACTIVE):
+						component=window[-1]
+				try:
+					if window.getState().contains(pyatspi.STATE_ACTIVE):
+						break
+				except Exception as e:
+					pass
+			if component!=None:
+				break
+		return app
 	#def activeWindow
 
 	def selectAll(self):
@@ -43,22 +55,68 @@ class a11Manager():
 			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_PRESS)
 			pyatspi.Registry.generateKeyboardEvent(keys["a"], None, pyatspi.KEY_PRESSRELEASE)
 			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_RELEASE)
-			time.sleep(0.1)
+			#time.sleep(0.1)
 #			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_PRESS)
 #			pyatspi.Registry.generateKeyboardEvent(keys["c"], None, pyatspi.KEY_PRESSRELEASE)
 #			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_RELEASE)
+		return
 	#def selectAll
 
-	def trackFocus(self):
-		pyatspi.Registry.registerEventListener(self._emitFocusChanged, "object:state-changed:focused")
-		pyatspi.Registry.start()
-	
+	def _thTrackFocus(self,callback):
+		register=pyatspi.Registry()
+		register.registerEventListener(self._emitFocusChanged, "object:state-changed:focused")
+		register.registerEventListener(self._emitFocusChanged, "object:state-changed:selected")
+		#register.registerEventListener(self._emitFocusChanged, "object:state-changed:")
+		register.start()
+		self._debug("Bring up registry")
+
+	def trackFocus(self,callback,oneshot=False):
+		self._debug("Tracking focus")
+		self.callback=callback
+		self._debug("Setting up registry")
+		proc=threading.Thread(target=self._thTrackFocus,args=[callback])
+		proc.start()
+		self._debug("Tracking focus ENABLED")
+		return
+	#def trackFocus
+
+	def untrackFocus(self):
+		pyatspi.Registry.stop()
+		return
+	#def untrackFocus
+
+	def getCurrentFocusCoords(self):
+		def inspectTree(index,root):
+			focused=None
+			if root.getState().contains(pyatspi.STATE_FOCUSED) and root.getState().contains(pyatspi.STATE_SHOWING):
+				focused=root
+			else:
+				for tree in root:
+					focused=inspectTree(index + 1, tree)
+					if focused!=None:
+						break
+			return(focused)
+		data={"position":0,"x":0,"y":0,"size":0,"w":0,"h":0}
+		focused=inspectTree(0, self.activeWindow())
+		if focused==None:
+			focused=self.activeWindow()
+		position=focused.get_position(pyatspi.component.XY_SCREEN)
+		size=focused.get_size()
+		data={"position":-1,"x":position.x,"y":position.y,"size":-1,"w":size.x,"h":size.y}
+		return(data)
+	#def getCurrentFocusCoords
+
 	def _emitFocusChanged(self,event):
 		component=event.source
-		print(event.detail1)
-		print(parent)
-		print(event.source)
-		print(component, " got focus " if event.detail1 else " lost focus")
-		pyatspi.Registry.stop()
+		try:
+			name=component.name
+			position=component.get_position(pyatspi.component.XY_SCREEN)
+		except Exception as e:
+			print("focusErr: {}".format(e))
+			return
+		size=component.get_size()
+		data={"component":name,"x":position.x,"y":position.y,"w":size.x,"h":size.y}
+		return(self.callback(data))
+	#def _emitFocusChanged
 #class a11Manager
 
