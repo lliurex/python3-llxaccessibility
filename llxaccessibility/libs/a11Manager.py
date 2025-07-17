@@ -12,6 +12,7 @@ class a11Manager():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		self.register=pyatspi.Registry()
+		self.oldComponent=None
 	#def __init__
 
 	def _debug(self,msg):
@@ -126,6 +127,9 @@ class a11Manager():
 	def _emitStateSelected(self,event):
 		self._debug("SELECTED")
 		component=event.source
+		if component==self.oldComponent:
+			return
+		self.oldComponent=component
 		name=""
 		data={"component":"","x":-1,"y":-1,"w":0,"h":0}
 		try:
@@ -152,6 +156,9 @@ class a11Manager():
 	def _emitStateChanged(self,event):
 		self._debug("CHANGED")
 		component=event.source
+		if component==self.oldComponent:
+			return
+		self.oldComponent=component
 		name=""
 		data={"component":"","x":-1,"y":-1,"w":0,"h":0}
 		try:
@@ -180,6 +187,9 @@ class a11Manager():
 	def _emitStateFocused(self,event):
 		self._debug("ACTIVE")
 		component=event.source
+		if component==self.oldComponent:
+			return
+		self.oldComponent=component
 		name=""
 		data={"component":"","x":-1,"y":-1,"w":0,"h":0}
 		try:
