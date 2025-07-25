@@ -12,7 +12,7 @@ import llxaccessibility.libs.kwinManager as kwinManager
 import llxaccessibility.libs.kconfig as kconfig
 import llxaccessibility.libs.clipboardManager as clipboardManager
 import llxaccessibility.libs.a11Manager as a11Manager
-from PySide2.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 
 class client():
 	def __init__(self):

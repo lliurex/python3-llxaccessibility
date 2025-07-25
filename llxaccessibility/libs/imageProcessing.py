@@ -12,7 +12,7 @@ import imutils
 import numpy as np
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from PySide2.QtGui import QClipboard,QPixmap
+from PySide6.QtGui import QClipboard,QPixmap
 try:
 	from . import kconfig
 except:

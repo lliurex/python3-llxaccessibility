@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import dbus,dbus.exceptions
-from PySide2.QtGui import QClipboard
-from PySide2.QtWidgets import QApplication
-from PySide2.QtCore import QThread,Signal
+from PySide6.QtGui import QClipboard
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread,Signal
 from . import a11Manager
 
 class _klipperManager(QThread):
