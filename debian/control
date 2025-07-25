@@ -10,6 +10,6 @@ Homepage: http://lliurex.net
 
 Package: python3-llxaccessibility
 Architecture: all
-Depends: python3,python3-xdg, app2menu-helper,python3-imutils.python3-opencv.python3-atspi,python3-spellchecker,python3-langid
+Depends: python3,python3-xdg, app2menu-helper,python3-imutils,python3-opencv,python3-atspi,python3-spellchecker,python3-langid
 Description: Lib for generate desktop files
 
