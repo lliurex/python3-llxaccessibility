@@ -61,7 +61,7 @@ class clipboardManager():
 			dbusObject=dbusObj.get_object("org.kde.klipper","/klipper")
 			self.dbusInterface=dbus.Interface(dbusObject,"org.kde.klipper.klipper")
 		self.klipper=_klipperManager(self.dbusInterface)
-		self.clipboard=QClipboard()
+		self.clipboard=QApplication.clipboard()
 		self.a11Manager=a11Manager.a11Manager()
 	#def __init__(self,*args,**kwargs):
 
@@ -109,7 +109,6 @@ class clipboardManager():
 
 	def _getClipboardText(self):
 		txt=""
-		print(self.clipboard.ownsSelection())
 		clipboard=QClipboard()
 		txt=clipboard.text(self.clipboard.Selection)
 		txt=txt.strip()
