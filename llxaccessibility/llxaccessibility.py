@@ -99,13 +99,27 @@ class client():
 	#def _mpLaunchKcm
 
 	def launchKcmModule(self,kcmModule):
-		cmd=["kcmshell5",kcmModule]
+		kcm="kcmshell5"
+		cmd=["plasmashell","-v"]
+		proc=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+		for l in proc.split("\n"):
+			if l.strip().startswith("plasmashell "):
+				ver=l.split(" ")[1].split(".")[0]
+				kcm.replace("5",ver)
+		cmd=[kcm,kcmModule]
 		proc=self.launchCmd(cmd)
 		return(proc)
 	#def launchKcmModule
 
 	def launchKcmModuleAsync(self,kcmModule):
-		cmd=["kcmshell5",kcmModule]
+		kcm="kcmshell5"
+		cmd=["plasmashell","-v"]
+		proc=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+		for l in proc.split("\n"):
+			if l.strip().startswith("plasmashell "):
+				ver=l.strip().split(" ")[1].split(".")[0]
+				kcm=kcm.replace("5",ver)
+		cmd=[kcm,kcmModule]
 		proc=self.launchCmdAsync(cmd)
 		return(proc)
 	#def launchKcmModule
