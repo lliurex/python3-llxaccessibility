@@ -105,7 +105,7 @@ class client():
 		for l in proc.split("\n"):
 			if l.strip().startswith("plasmashell "):
 				ver=l.split(" ")[1].split(".")[0]
-				kcm.replace("5",ver)
+				kcm=kcm.replace("5",ver)
 		cmd=[kcm,kcmModule]
 		proc=self.launchCmd(cmd)
 		return(proc)
