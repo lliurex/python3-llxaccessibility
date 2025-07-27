@@ -149,3 +149,10 @@ class manager():
 			f.write(fContent)
 	#def setMonoSound
 
+	def removeMonoSound(self):
+		paFile=os.path.join(os.environ["HOME"],".config","pipewire","pipewire.conf.d","mono.conf")
+		if os.path.exists(paFile):
+			os.unlink(paFile)
+	#def removeMonoSound
+
+
