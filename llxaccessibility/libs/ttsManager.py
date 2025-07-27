@@ -115,7 +115,7 @@ class manager():
 		for l in out.split("\n"):
 			if l.strip().startswith("Default Source:"):
 				defaultSource=l.split(" ")[-1]
-		paDir=os.path.join(os.environ["HOME"],".config","pipewire","pipware.conf.d")
+		paDir=os.path.join(os.environ["HOME"],".config","pipewire","pipewire.conf.d")
 		fContent='context.modules = [\n\
 {   name = libpipewire-module-combine-stream\n\
         args = {\n\
