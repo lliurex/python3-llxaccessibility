@@ -107,3 +107,21 @@ class manager():
 		ordDict=OrderedDict(sorted(allDict.items(),reverse=True))
 		return(ordDict)
 	#def getTtsFiles
+	
+	def setMonoSound(self):
+		env=os.environ
+		env.update({"LANG:C"})
+		out=subprocess.check_output(["pactl","info"],env=env,encoding="utf8")
+		for l in out.split("\n"):
+			if l.strip().startswith("Default Source:"):
+				defaultSource=l.split(" ")[1-]
+		with open("/usr/share/accesshelper/helper/mono.conf","r") as f:
+			fContent=f.read()
+		fcontent.replace("NODE_NAME",defaultSource)
+		paDir=os.path.join(os.environ["HOME"],".config","pipewire","pipware.conf.d")
+		if not os.path.exists(paDir):
+			os.makedirs(paDir)
+		with open(os.path.join(paDir,"mono.conf"),"w") as f:
+			f.write(fcontent)
+	#def setMonoSound
+
