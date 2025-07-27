@@ -110,18 +110,42 @@ class manager():
 	
 	def setMonoSound(self):
 		env=os.environ
-		env.update({"LANG:C"})
+		env.update({"LANG":"C"})
 		out=subprocess.check_output(["pactl","info"],env=env,encoding="utf8")
 		for l in out.split("\n"):
 			if l.strip().startswith("Default Source:"):
-				defaultSource=l.split(" ")[1-]
-		with open("/usr/share/accesshelper/helper/mono.conf","r") as f:
-			fContent=f.read()
-		fcontent.replace("NODE_NAME",defaultSource)
+				defaultSource=l.split(" ")[-1]
 		paDir=os.path.join(os.environ["HOME"],".config","pipewire","pipware.conf.d")
+		fContent='context.modules = [\n\
+{   name = libpipewire-module-combine-stream\n\
+        args = {\n\
+            combine.mode = sink\n\
+            node.name = "Mono" \n\
+            node.description = "Mono" \n\
+            combine.latency-compensate = false\n\
+            combine.props = {\n\
+            audio.position = [ MONO ]\n\
+            }\n\
+            stream.props = {\n\
+                stream.dont-remix = true\n\
+            }\n\
+            stream.rules = [\n\
+            {   matches = [\n\
+                    {   media.class = "Audio/Sink"\n\
+                        node.name = NODE_NAME\n\
+                    } ]\n\
+                    actions = { create-stream = {\n\
+                            audio.position = [ FL FR ]\n\
+                            combine.audio.position = [ MONO ]\n\
+                    } } }\n\
+            ]\n\
+        }\n\
+    }\n\
+]'
+		fContent=fContent.replace("NODE_NAME",defaultSource)
 		if not os.path.exists(paDir):
 			os.makedirs(paDir)
 		with open(os.path.join(paDir,"mono.conf"),"w") as f:
-			f.write(fcontent)
+			f.write(fContent)
 	#def setMonoSound
 
