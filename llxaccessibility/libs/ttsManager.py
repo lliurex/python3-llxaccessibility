@@ -108,7 +108,7 @@ class manager():
 		return(ordDict)
 	#def getTtsFiles
 	
-	def setMonoSound(self):
+	def setMonoAudio(self,autoEnable=False):
 		env=os.environ
 		env.update({"LANG":"C"})
 		out=subprocess.check_output(["pactl","info"],env=env,encoding="utf8")
@@ -147,12 +147,20 @@ class manager():
 			os.makedirs(paDir)
 		with open(os.path.join(paDir,"mono.conf"),"w") as f:
 			f.write(fContent)
-	#def setMonoSound
+		if autoEnable==True:
+			cmd=["systemctl","--user","restart","pipewire","pipewire-pulse","wireplumber"]
+			subprocess.run(cmd)
+			cmd=["pactl","set-default-sink","Mono"]
+			subprocess.run(cmd)
+	#def setMonoAudio
 
-	def removeMonoSound(self):
+	def disableMonoAudio(self,autoEnable=False):
 		paFile=os.path.join(os.environ["HOME"],".config","pipewire","pipewire.conf.d","mono.conf")
 		if os.path.exists(paFile):
 			os.unlink(paFile)
-	#def removeMonoSound
+		cmd=["systemctl","--user","restart","pipewire","pipewire-pulse","wireplumber"]
+		subprocess.run(cmd)
+
+	#def disableMonoAudio
 
 

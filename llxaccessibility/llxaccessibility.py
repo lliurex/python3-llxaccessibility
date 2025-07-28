@@ -160,6 +160,13 @@ class client():
 		return(self.tts.getFestivalVoices())
 	#def getFestivalVoices
 
+	def setMonoAudio(self,state=True,enable=True):
+		if state==True:
+			self.tts.setMonoAudio(enable)
+		else:
+			self.tts.disableMonoAudio()
+	#def setMonoAudio
+
 	def getSessionSound(self):
 		return(self.sddm.getSessionSound())
 	#def getSessionSound
