@@ -57,8 +57,14 @@ class kconfig():
 							break
 						if "<string>" in line.lower():
 							items.append(line.removeprefix("<string>").removesuffix("</string>"))
-		if len(items)>=int(value):
-			text=items[int(value)]
+		rvalue=0
+		if isinstance(value,str):
+			if value.isdigit():
+				rvalue=int(value)
+		elif isinstance(value,int):
+			rvalue=value
+			if len(items)>=rvalue:
+				text=items[rvalue]
 		return text
 	#def getXmlTextFromValueScriptXml
 

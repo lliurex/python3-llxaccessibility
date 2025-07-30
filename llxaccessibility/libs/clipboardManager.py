@@ -109,16 +109,16 @@ class clipboardManager():
 
 	def _getClipboardText(self):
 		txt=""
-		clipboard=QClipboard()
-		txt=clipboard.text(self.clipboard.Selection)
+		clipboard=QApplication.clipboard()
+		txt=clipboard.text(QClipboard.Selection)
 		txt=txt.strip()
 		if len(txt)==0:
 			self.a11Manager.selectAll()
-			txt=clipboard.text(self.clipboard.Selection).strip()
+			txt=clipboard.text(QClipboard.Selection).strip()
 		if len(txt)!=0:
 			print("DELETE")
-			self.clipboard.clear(self.clipboard.Selection)
-			self.clipboard.clear(self.clipboard.Clipboard)
+			self.clipboard.clear(QClipboard.Selection)
+			self.clipboard.clear(QClipboard.Clipboard)
 		#	self.klipper.clearKlipperContents()
 		#if not txt:
 		#	txt=self.clipboard.text()

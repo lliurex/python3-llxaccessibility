@@ -522,17 +522,23 @@ class imageProcessing():
 			tsslang="spa"
 		elif lang=="ca":
 			tsslang="cat"
-		with tesserocr.PyTessBaseAPI(lang=tsslang,psm=11) as api:
-			api.ReadConfigFile('digits')
-			# Consider having string with the white list chars in the config_file, for instance: "0123456789"
-			whitelist=string.ascii_letters+string.digits+string.punctuation+string.whitespace
-			api.SetVariable("classify_bln_numeric_mode", "0")
-			#api.SetPageSegMode(tesserocr.PSM.DEFAULT)
-			api.SetVariable('tessedit_char_whitelist', whitelist)
-			api.SetImage(imgPIL)
-			api.Recognize()
-			txt=api.GetUTF8Text()
-			self._debug((api.AllWordConfidences()))
+		try:
+			api=tesserocr.PyTessBaseAPI(lang=tsslang,psm=11)
+		except Exception as e:
+			print(e)
+			print("Switch back to va")
+			ttslang="cat"
+			api=tesserocr.PyTessBaseAPI(lang=tsslang,psm=11)
+		api.ReadConfigFile('digits')
+		# Consider having string with the white list chars in the config_file, for instance: "0123456789"
+		whitelist=string.ascii_letters+string.digits+string.punctuation+string.whitespace
+		api.SetVariable("classify_bln_numeric_mode", "0")
+		#api.SetPageSegMode(tesserocr.PSM.DEFAULT)
+		api.SetVariable('tessedit_char_whitelist', whitelist)
+		api.SetImage(imgPIL)
+		api.Recognize()
+		txt=api.GetUTF8Text()
+		self._debug((api.AllWordConfidences()))
 		return(txt)
 	#def _ocrProcess
 
