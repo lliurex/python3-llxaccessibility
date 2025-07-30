@@ -522,8 +522,13 @@ class imageProcessing():
 			tsslang="spa"
 		elif lang=="ca":
 			tsslang="cat"
-		tsslang="ru"
-		api=tesserocr.PyTessBaseAPI(lang=tsslang,psm=11)
+		try:
+			api=tesserocr.PyTessBaseAPI(lang=tsslang,psm=11)
+		except Exception as e:
+			print(e)
+			print("Switch back to va")
+			ttslang="cat"
+			api=tesserocr.PyTessBaseAPI(lang=tsslang,psm=11)
 		api.ReadConfigFile('digits')
 		# Consider having string with the white list chars in the config_file, for instance: "0123456789"
 		whitelist=string.ascii_letters+string.digits+string.punctuation+string.whitespace
