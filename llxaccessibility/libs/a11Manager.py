@@ -279,12 +279,11 @@ class a11Manager():
 		maxX=position.x+size.x
 		maxY=position.y+size.y
 		if component.parent.contains(minX,minY,pyatspi.component.XY_SCREEN)==False or component.parent.contains(maxX,maxY,pyatspi.component.XY_SCREEN)==False:
-			print("I'M OUT!!")
-			print("Old: {}".format(data))
-			time.sleep(0.2)
-			position=component.get_position(pyatspi.component.XY_SCREEN)
-			data={"component":name,"x":position.x,"y":position.y,"w":size.x,"h":size.y}
-			print("New: {}".format(data))
+			try:
+				position=component.get_position(pyatspi.component.XY_SCREEN)
+				data={"component":name,"x":position.x,"y":position.y,"w":size.x,"h":size.y}
+			except:
+				pass
 		
 		if data==self.oldData:
 			return
