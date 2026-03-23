@@ -222,5 +222,14 @@ class client():
 			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
 
+	def say(self,txt,lang=""):
+		if isinstance(txt,str)==False:
+			return()
+		if lang=="":
+			lang=langid.classify(txt)[0]
+			print("LANG: {}".format(lang))
+		self.tts.invokeReader(txt,lang=lang)
+	#def say
+
 #class client
 
