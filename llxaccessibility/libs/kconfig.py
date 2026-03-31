@@ -11,7 +11,7 @@ class kconfig():
 			print("Kconfig: {}".format(msg))
 
 	def readKFile(self,kfile,group,key):
-		cmd=["kreadconfig5","--file",kfile,"--group",group,"--key",key]
+		cmd=["kreadconfig6","--file",kfile,"--group",group,"--key",key]
 		out=subprocess.check_output(cmd,universal_newlines=True,encoding="utf8").strip()
 		if out=="false":
 			out=False
@@ -28,7 +28,7 @@ class kconfig():
 	def writeKFile(self,kfile,group,key,data):
 		if isinstance(data,str)==False:
 			data=str(data).lower()
-		cmd=["kwriteconfig5","--file",kfile,"--group",group,"--key",key,data]
+		cmd=["kwriteconfig6","--file",kfile,"--group",group,"--key",key,data]
 		out=subprocess.check_output(cmd)
 		self._debug(out)
 		return(out)
