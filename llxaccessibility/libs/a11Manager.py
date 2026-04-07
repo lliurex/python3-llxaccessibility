@@ -53,6 +53,7 @@ class a11Manager():
 			desktop = pyatspi.Registry.getDesktop(idx)
 			for app in desktop:
 				for window in app:
+					print(window)
 					if window.getState().contains(pyatspi.STATE_FOCUSED) and window.getState().contains(pyatspi.STATE_SHOWING):
 						print("Active: {}".format(window))
 						component=window[-1]
@@ -61,6 +62,7 @@ class a11Manager():
 						break
 			if component!=None:
 				break
+		print(".........")
 		return window
 	#def activeWindow
 
@@ -70,9 +72,14 @@ class a11Manager():
 		with open("/tmp/a","w") as f:
 			f.write("{}\n".format(app))
 		if app!=None:
-			chld=app.getChildAtIndex(0).getChildAtIndex(0)
+			print("Selected APP: {}".format(app))
+			chld=app.getChildAtIndex(0)
+			if chld!=None:
+				chld=app.getChildAtIndex(0).getChildAtIndex(0)
+				if chld==None:
+					chld=app.getChildAtIndex(0)
 			if chld==None:
-				chld=app.getChildAtIndex(0)
+				chld=app
 			chld.queryComponent().grabFocus()
 			#Set selection mode for okular
 			if "okular" in app.get_name().lower():
