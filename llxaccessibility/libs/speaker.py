@@ -118,7 +118,7 @@ class speaker():
 
 	def recordPulseStart(self):
 		self._debug("START Pulse recording")
-		self.mp=multiprocessing.Process(target=self._capturePulseOutput,args=(self.tmpFile,),daemon=False)
+		self.mp=multiprocessing.Process(target=self._capturePipeOutput,args=(self.tmpFile,),daemon=False)
 		self.mp.start()
 		#self._capturePulseOutput(outF)
 	#def recordPulseStart
@@ -194,21 +194,30 @@ class speaker():
 		return(defaultVoice)
 	#def _getFestivalDefaultVoiceForLanguage
 
-	def _capturePulseOutput(self,outF):
+	def _capturePipeOutput(self,outF):
 		try:
 			confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
 			defOutput=0
-			cmd=["pacmd","list-sinks"]
+			#cmd=["pacmd","list-sinks"]
+			cmd=["wpctl","status"]
 			proc=subprocess.run(cmd,encoding="utf8",stderr=subprocess.PIPE,stdout=subprocess.PIPE)
 			read=False
 			self._debug("Reading sinks")
 			for lproc in proc.stdout.split("\n"):
-				if lproc.strip().startswith("* index"):
+				strippedLproc=lproc.replace(" ","")
+				if "Sinks:" in strippedLproc:
 					read=True
 					continue
 				if read==True:
-					if lproc.strip().startswith("name:"):
-						defOutput=lproc.strip().split(" ")[-1].replace("<","").replace(">","")
+					if strippedLproc[1]=="*":
+						sinkIndex=strippedLproc[2:strippedLproc.index(".")]
+						self._debug("Inspecting sink {}".format(sinkIndex))
+						cmd=["wpctl","inspect",sinkIndex]
+						sinkproc=subprocess.run(cmd,encoding="utf8",stderr=subprocess.PIPE,stdout=subprocess.PIPE)
+						for sinklproc in sinkproc.stdout.split("\n"):
+							if sinklproc.replace(" ","").startswith("*node.name="):
+								defOutput=sinklproc.strip().split("=")[-1].replace("\"","").strip()
+								break
 						read=False
 						break
 					self._debug("Default output: {}".format(defOutput))
@@ -218,5 +227,5 @@ class speaker():
 		except Exception as e:
 			self._debug("** Capture error: {}".format(e))
 		return(defOutput)
-	#def _capturePulseAudio
+	#def _capturePipeOutput
 #class speaker
