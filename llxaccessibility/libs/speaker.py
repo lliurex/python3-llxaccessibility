@@ -109,6 +109,8 @@ class speaker():
 			voiceLocale="it"
 		for spdlang in self.spd.list_synthesis_voices():
 			if spdlang[1]==voiceLocale or voiceLocale=="":
+				if suggestedName==None:
+					suggestedName="female1"
 				if suggestedName.lower() == spdlang[-1].lower():
 					voiceLocale=spdlang[1]
 					voice=spdlang[0]

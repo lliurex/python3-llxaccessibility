@@ -37,28 +37,30 @@ class kconfig():
 	def getTextFromValueKScript(self,path,group,value):
 		items=[]
 		text=""
-		self._debug("Getting value {0}-{1} from {2}".format(group,value,path)) 
-		if group.startswith("kcfg_")==False:
-			group="kcfg_{}".format(group.capitalize())
-		if os.path.exists(path)==False:
-			path=self._getKScriptPath(path)
-			path=os.path.join(path,"contents","ui","config.ui")
-		if os.path.exists(path)==True:
-			item=False
-			with open(path,"r") as f:
-				for fline in f.readlines():
-					line=fline.strip()
-					if "ComboBox" in line and group in line:
-						item=True
-						continue
-					if item==True:
-						if "</widget>" in line:
-							item=False	
-							break
-						if "<string>" in line.lower():
-							items.append(line.removeprefix("<string>").removesuffix("</string>"))
-		if len(items)>=int(value):
-			text=items[int(value)]
+		if isinstance(value,str)==True:
+			if value!="":
+				self._debug("Getting value {0}-{1} from {2}".format(group,value,path)) 
+				if group.startswith("kcfg_")==False:
+					group="kcfg_{}".format(group.capitalize())
+				if os.path.exists(path)==False:
+					path=self._getKScriptPath(path)
+					path=os.path.join(path,"contents","ui","config.ui")
+				if os.path.exists(path)==True:
+					item=False
+					with open(path,"r") as f:
+						for fline in f.readlines():
+							line=fline.strip()
+							if "ComboBox" in line and group in line:
+								item=True
+								continue
+							if item==True:
+								if "</widget>" in line:
+									item=False	
+									break
+								if "<string>" in line.lower():
+									items.append(line.removeprefix("<string>").removesuffix("</string>"))
+				if len(items)>=int(value):
+					text=items[int(value)]
 		return text
 	#def getXmlTextFromValueScriptXml
 
