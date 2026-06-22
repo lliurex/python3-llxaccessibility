@@ -235,10 +235,10 @@ class client():
 			if spellcheck==False:
 				lang=""
 			(lang,txt)=self.getImageOcr(spellcheck=spellcheck,img=tmpimg,lang=lang)
-			#self._debug("Detected IMAGE LANGUAGE {}".format(detectedLang[0]))
+			self._debug("Detected IMAGE LANGUAGE {}".format(lang[0]))
 		else:
 			lang=langid.classify(txt)[0]
-			#self._debug("Detected CLIPBOARD LANGUAGE {}".format(detectedLang[0]))
+			self._debug("Detected CLIPBOARD LANGUAGE {}".format(lang[0]))
 		if len(txt)>0:
 			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
