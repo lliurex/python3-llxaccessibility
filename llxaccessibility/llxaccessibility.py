@@ -34,6 +34,11 @@ class client():
 			print("libaccess: {}".format(msg))
 	#def _debug
 
+	def _log(self,msg):
+		with open("/tmp/access.log","a") as f:
+			f.write(msg)
+			f.write("\n")
+
 	def getDockEnabled(self):
 		return(self.profile.getDockEnabled())
 	#def getDockEnabled
@@ -219,6 +224,10 @@ class client():
 		lang=langdict.get(lang.lower(),"en")
 		if clipboard=="":
 			clipboard=False
+		self._debug("READY TO READ")
+		if onlyScreen==False:
+			print ("SELECT ALL")
+			self.a11Manager.selectAll()
 		item=self.clipboard.getClipboardContents()
 		if isinstance(item,str):
 			if "://" in item and item.count(" ")==0 and item.count("/")>1:
@@ -239,6 +248,9 @@ class client():
 		else:
 			lang=langid.classify(txt)[0]
 			self._debug("Detected CLIPBOARD LANGUAGE {}".format(lang[0]))
+		self._log("READ TXT --->")
+		self._log(txt)
+		self._log("READ TXT ---/>")
 		if len(txt)>0:
 			self.tts.invokeReader(txt,lang=lang)
 	#def readScreen
