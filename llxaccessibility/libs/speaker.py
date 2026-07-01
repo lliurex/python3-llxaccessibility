@@ -228,4 +228,30 @@ class speaker():
 			self._debug("** Capture error: {}".format(e))
 		return(defOutput)
 	#def _capturePipeOutput
+
+	def _capturePulseOutput(self,outF):
+		try:
+			confDir=os.path.join(os.environ.get('HOME','/tmp'),".local/share/accesswizard/records")
+			defOutput=0
+			cmd=["pacmd","list-sinks"]
+			proc=subprocess.run(cmd,encoding="utf8",stderr=subprocess.PIPE,stdout=subprocess.PIPE)
+			read=False
+			self._debug("Reading sinks")
+			for lproc in proc.stdout.split("\n"):
+				if lproc.strip().startswith("* index"):
+					read=True
+					continue
+				if read==True:
+					if lproc.strip().startswith("name:"):
+						defOutput=lproc.strip().split(" ")[-1].replace("<","").replace(">","")
+						read=False
+						break
+					self._debug("Default output: {}".format(defOutput))
+			cmd=["ffmpeg","-f","pulse","-ac","2","-i","{}.monitor".format(defOutput),outF]
+			self._debug("RUN {}".format(cmd))
+			subprocess.run(cmd)
+		except Exception as e:
+			self._debug("** Capture error: {}".format(e))
+		return(defOutput)
+	#def _capturePulseAudio
 #class speaker
