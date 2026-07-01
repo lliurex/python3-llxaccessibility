@@ -53,7 +53,6 @@ class a11Manager():
 			desktop = pyatspi.Registry.getDesktop(idx)
 			for app in desktop:
 				for window in app:
-					print(window)
 					if window.getState().contains(pyatspi.STATE_FOCUSED) and window.getState().contains(pyatspi.STATE_SHOWING):
 						print("Active: {}".format(window))
 						component=window[-1]
@@ -62,7 +61,6 @@ class a11Manager():
 						break
 			if component!=None:
 				break
-		print(".........")
 		return window
 	#def activeWindow
 
@@ -72,14 +70,9 @@ class a11Manager():
 		with open("/tmp/a","w") as f:
 			f.write("{}\n".format(app))
 		if app!=None:
-			print("Selected APP: {}".format(app))
-			chld=app.getChildAtIndex(0)
-			if chld!=None:
-				chld=app.getChildAtIndex(0).getChildAtIndex(0)
-				if chld==None:
-					chld=app.getChildAtIndex(0)
+			chld=app.getChildAtIndex(0).getChildAtIndex(0)
 			if chld==None:
-				chld=app
+				chld=app.getChildAtIndex(0)
 			chld.queryComponent().grabFocus()
 			#Set selection mode for okular
 			if "okular" in app.get_name().lower():
@@ -90,9 +83,9 @@ class a11Manager():
 			pyatspi.Registry.generateKeyboardEvent(keys["a"], None, pyatspi.KEY_PRESSRELEASE)
 			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_RELEASE)
 			#time.sleep(0.1)
-#			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_PRESS)
-#			pyatspi.Registry.generateKeyboardEvent(keys["c"], None, pyatspi.KEY_PRESSRELEASE)
-#			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_RELEASE)
+			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_PRESS)
+			pyatspi.Registry.generateKeyboardEvent(keys["c"], None, pyatspi.KEY_PRESSRELEASE)
+			pyatspi.Registry.generateKeyboardEvent(keys["CTRL"], None, pyatspi.KEY_RELEASE)
 		return
 	#def selectAll
 
